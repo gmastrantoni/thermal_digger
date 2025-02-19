@@ -7,7 +7,7 @@ A Python application for analyzing thermal image time series data. This tool all
 - Load and visualize thermal image data from CSV files
 - Navigate through time series of thermal images
 - Select individual points or define polygon regions for analysis
-- Calculate and plot temperature statistics over time
+- Calculate and plot temperature time series over time
 - Export plots and analysis results
 - User-friendly GUI interface
 
