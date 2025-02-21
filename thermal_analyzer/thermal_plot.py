@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+from datetime import datetime
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Polygon
@@ -16,6 +18,16 @@ class ThermalPlotter:
         self.ax_timeseries = None
         self.canvas_timeseries = None
         self.polygon_patch = None
+        
+        # Store time series data for CSV export
+        self.current_timeseries_data = {
+            'timestamps': None,
+            'values': None,
+            'mins': None,
+            'maxs': None,
+            'selection_type': None # point or polygon
+            }
+        
         self.setup_plots()
 
     def setup_plots(self):
@@ -90,6 +102,12 @@ class ThermalPlotter:
     def plot_time_series(self, timestamps, values, mins=None, maxs=None):
         """Plot time series data (single point or polygon statistics)"""
         self.ax_timeseries.clear()
+        # Store the current time series data for CSV export
+        self.current_timeseries_data['timestamps'] = timestamps
+        self.current_timeseries_data['values'] = values
+        self.current_timeseries_data['mins'] = mins
+        self.current_timeseries_data['maxs'] = maxs
+        self.current_timeseries_data['selection_type'] = 'point' if mins is None and maxs is None else 'polygon'
         
         if mins is None and maxs is None:
             # Single point time series
@@ -108,20 +126,6 @@ class ThermalPlotter:
         self.ax_timeseries.legend()
         self.ax_timeseries.grid(True)
         
-        self.canvas_timeseries.draw()
-        
-    def clear_selection(self):
-        """Clear current selection (point or polygon) and markers"""
-        if self.polygon_patch:
-            self.polygon_patch.remove()
-            self.polygon_patch = None
-        
-        # Clear any point markers
-        for artist in self.ax_thermal.lines:
-            artist.remove()
-        
-        self.canvas_thermal.draw()
-        self.ax_timeseries.clear()
         self.canvas_timeseries.draw()
 
     def clear_polygon(self):
@@ -191,7 +195,7 @@ class ThermalPlotter:
         return mask
 
     def save_plots(self, base_filename):
-        """Save both thermal and time series plots"""
+        """Save both thermal and time series plots, and time series data as CSV"""
         # Save thermal image plot
         thermal_filename = f"{base_filename}_thermal.png"
         self.fig_thermal.savefig(thermal_filename, bbox_inches='tight', dpi=300)
@@ -199,9 +203,66 @@ class ThermalPlotter:
         # Save time series plot
         timeseries_filename = f"{base_filename}_timeseries.png"
         self.fig_timeseries.savefig(timeseries_filename, bbox_inches='tight', dpi=300)
+
+        # Save time series data as CSV if available
+        csv_filename = None
+        if self.current_timeseries_data['timestamps'] is not None:
+            csv_filename = f"{base_filename}_timeseries.csv"
+            self._export_timeseries_data(csv_filename)
         
-        return thermal_filename, timeseries_filename
+        return thermal_filename, timeseries_filename, csv_filename
+    
+    def _export_timeseries_data(self, filename):
+        """Export time series data to CSV file"""
+        # Create a dictionary to store the data
+        data_dict = {
+            'Timestamp': [ts.strftime('%Y-%m-%d %H:%M:%S') 
+                        for ts in self.current_timeseries_data['timestamps']]
+                        }
         
+        if self.current_timeseries_data['selection_type'] == 'point':
+            # Single point data
+            data_dict['Temperature'] = self.current_timeseries_data['values']
+        else:
+            # Polygon region statistics
+            data_dict.update({
+                'Mean_Temperature': self.current_timeseries_data['values'],
+                'Min_Temperature': self.current_timeseries_data['mins'],
+                'Max_Temperature': self.current_timeseries_data['maxs']
+                })
+        
+        # Create DataFrame and save to CSV
+        df = pd.DataFrame(data_dict)
+        # Format floating point numbers to have consistent precision
+        for col in df.select_dtypes(include=['float64']).columns:
+            df[col] = df[col].round(3)
+
+        df.to_csv(filename, index=False)
+
+        return
+    def clear_selection(self):
+        """Clear current selection (point or polygon) and markers"""
+        if self.polygon_patch:
+            self.polygon_patch.remove()
+            self.polygon_patch = None
+        
+        # Clear any point markers
+        for artist in self.ax_thermal.lines:
+            artist.remove()
+        
+        # Clear stored time series data
+        self.current_timeseries_data = {
+            'timestamps': None,
+            'values': None,
+            'mins': None,
+            'maxs': None,
+            'selection_type': None
+            }
+
+        self.canvas_thermal.draw()
+        self.ax_timeseries.clear()
+        self.canvas_timeseries.draw()
+
     def get_click_handler(self):
         """Return the canvas for click event binding"""
         return self.canvas_thermal

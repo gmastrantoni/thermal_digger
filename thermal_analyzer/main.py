@@ -253,7 +253,7 @@ class ThermalImageGUI:
         self.collecting_points = False
         self.selected_point = None
         self.plotter.clear_selection()
-
+    
     def calculate_time_series(self):
         """Calculate and plot time series for point or polygon selection"""
         if self.selection_mode == "point" and self.selected_point:
@@ -279,15 +279,21 @@ class ThermalImageGUI:
                 data = ThermalDataHandler.load_csv_data(csv_file)
                 masked_data = data[mask]
                 
-                means.append(np.mean(masked_data))
-                mins.append(np.min(masked_data))
-                maxs.append(np.max(masked_data))
+                if len(masked_data) > 0:  # Ensure we have data points in the polygon
+                    means.append(np.mean(masked_data))
+                    mins.append(np.min(masked_data))
+                    maxs.append(np.max(masked_data))
+                else:
+                    # Handle case where polygon contains no points
+                    means.append(np.nan)
+                    mins.append(np.nan)
+                    maxs.append(np.nan)
             
             # Plot polygon statistics time series
             self.plotter.plot_time_series(self.timestamps, means, mins, maxs)
 
     def save_plots(self):
-        """Save current plots as image files"""
+        """Save current plots as image files and time series data as CSV"""
         if self.current_data is None or len(self.csv_files) == 0:
             tk.messagebox.showwarning("Warning", "No data to save. Please load data first.")
             return
@@ -301,17 +307,21 @@ class ThermalImageGUI:
                 timestamp = self.timestamps[self.current_image_index].strftime("%Y%m%d_%H%M%S")
                 base_filename = os.path.join(save_dir, f"thermal_analysis_{timestamp}")
                 
-                # Save plots
-                thermal_file, timeseries_file = self.plotter.save_plots(base_filename)
+                # Save plots and CSV
+                thermal_file, timeseries_file, csv_file = self.plotter.save_plots(base_filename)
                 
-                # Show success message with saved file paths
-                message = f"Plots saved successfully:\n\n" \
+                # Build success message
+                message = f"Files saved successfully:\n\n" \
                          f"Thermal Image: {os.path.basename(thermal_file)}\n" \
-                         f"Time Series: {os.path.basename(timeseries_file)}"
+                         f"Time Series Plot: {os.path.basename(timeseries_file)}"
+                
+                if csv_file:
+                    message += f"\nTime Series Data: {os.path.basename(csv_file)}"
+                
                 tk.messagebox.showinfo("Success", message)
                 
             except Exception as e:
-                tk.messagebox.showerror("Error", f"Error saving plots: {str(e)}")
+                tk.messagebox.showerror("Error", f"Error saving files: {str(e)}")
 
     def clear_workspace(self):
         """Reset the entire workspace to initial state"""
