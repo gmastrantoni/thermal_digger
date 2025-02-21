@@ -292,31 +292,89 @@ class ThermalImageGUI:
             # Plot polygon statistics time series
             self.plotter.plot_time_series(self.timestamps, means, mins, maxs)
 
+    def get_default_save_directory(self):
+        """
+        Determines the default save directory based on input data location.
+        Creates a 'results' subdirectory if it doesn't exist.
+        """
+        if not self.csv_files:
+            return None
+            
+        # Get the directory of the first CSV file
+        input_dir = os.path.dirname(self.csv_files[0])
+        
+        # Create path for results directory
+        results_dir = os.path.join(input_dir, "results")
+        
+        # Create the results directory if it doesn't exist
+        try:
+            if not os.path.exists(results_dir):
+                os.makedirs(results_dir)
+                print(f"Created results directory: {results_dir}")
+            return results_dir
+        except Exception as e:
+            print(f"Warning: Could not create results directory: {e}")
+            return input_dir  # Fall back to input directory if we can't create results dir
+
     def save_plots(self):
-        """Save current plots as image files and time series data as CSV"""
+        """Save current plots as image files and time series data as CSV with custom filename"""
         if self.current_data is None or len(self.csv_files) == 0:
             tk.messagebox.showwarning("Warning", "No data to save. Please load data first.")
             return
-            
-        # Get the directory to save files
-        save_dir = filedialog.askdirectory(title="Select Directory to Save Plots")
+        
+        # Get default save directory
+        default_dir = self.get_default_save_directory()
+        
+        # Get custom filename from user
+        dialog = FileNameDialog(self.root)
+        self.root.wait_window(dialog.dialog)
+        
+        if not dialog.result:
+            return  # User cancelled
+        
+        # Get the directory to save files, starting from the default directory
+        # save_dir = filedialog.askdirectory(
+        #     title="Select Directory to Save Files",
+        #     initialdir=default_dir
+        #     )
+        save_dir = default_dir
         
         if save_dir:
             try:
-                # Create base filename from current timestamp
-                timestamp = self.timestamps[self.current_image_index].strftime("%Y%m%d_%H%M%S")
-                base_filename = os.path.join(save_dir, f"thermal_analysis_{timestamp}")
+                # Create base filename
+                base_name = dialog.result['filename']
+                
+                # Add timestamp if requested
+                if dialog.result['include_timestamp']:
+                    timestamp = self.timestamps[self.current_image_index].strftime("%Y%m%d_%H%M%S")
+                    base_name = f"{base_name}_{timestamp}"
+                
+                base_filename = os.path.join(save_dir, base_name)
                 
                 # Save plots and CSV
                 thermal_file, timeseries_file, csv_file = self.plotter.save_plots(base_filename)
                 
-                # Build success message
-                message = f"Files saved successfully:\n\n" \
-                         f"Thermal Image: {os.path.basename(thermal_file)}\n" \
-                         f"Time Series Plot: {os.path.basename(timeseries_file)}"
-                
-                if csv_file:
-                    message += f"\nTime Series Data: {os.path.basename(csv_file)}"
+                # Build success message with relative paths for cleaner display
+                try:
+                    common_prefix = os.path.commonpath([save_dir, thermal_file, timeseries_file])
+                    rel_thermal = os.path.relpath(thermal_file, common_prefix)
+                    rel_timeseries = os.path.relpath(timeseries_file, common_prefix)
+                    rel_csv = os.path.relpath(csv_file, common_prefix) if csv_file else None
+                    
+                    message = f"Files saved successfully in {os.path.basename(save_dir)}:\n\n" \
+                             f"Thermal Image: {rel_thermal}\n" \
+                             f"Time Series Plot: {rel_timeseries}"
+                    
+                    if rel_csv:
+                        message += f"\nTime Series Data: {rel_csv}"
+                except:
+                    # Fall back to full paths if relative path calculation fails
+                    message = f"Files saved successfully:\n\n" \
+                             f"Thermal Image: {os.path.basename(thermal_file)}\n" \
+                             f"Time Series Plot: {os.path.basename(timeseries_file)}"
+                    
+                    if csv_file:
+                        message += f"\nTime Series Data: {os.path.basename(csv_file)}"
                 
                 tk.messagebox.showinfo("Success", message)
                 
@@ -339,6 +397,58 @@ class ThermalImageGUI:
         
         # Clear plots
         self.plotter.clear_workspace()
+
+class FileNameDialog:
+    """Dialog for getting custom filename with optional timestamp"""
+    def __init__(self, parent):
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title("Save Files")
+        self.dialog.transient(parent)
+        
+        # Create and pack widgets
+        frame = ttk.Frame(self.dialog, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Filename entry
+        ttk.Label(frame, text="Enter base filename:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.filename = tk.StringVar(value="thermal_analysis")
+        self.filename_entry = ttk.Entry(frame, textvariable=self.filename, width=40)
+        self.filename_entry.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
+        
+        # Timestamp checkbox
+        self.include_timestamp = tk.BooleanVar(value=True)
+        ttk.Checkbutton(frame, text="Include timestamp in filename", 
+                       variable=self.include_timestamp).grid(row=2, column=0, sticky=tk.W, pady=5)
+        
+        # Buttons
+        button_frame = ttk.Frame(frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=10)
+        ttk.Button(button_frame, text="OK", command=self.ok).grid(row=0, column=0, padx=5)
+        ttk.Button(button_frame, text="Cancel", command=self.cancel).grid(row=0, column=1, padx=5)
+        
+        # Initialize result
+        self.result = None
+        
+        # Center the dialog
+        self.dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 50,
+                                       parent.winfo_rooty() + 50))
+        
+        # Make dialog modal
+        self.dialog.grab_set()
+        self.dialog.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.filename_entry.focus_set()
+        
+    def ok(self):
+        """User clicked OK"""
+        self.result = {
+            'filename': self.filename.get(),
+            'include_timestamp': self.include_timestamp.get()
+        }
+        self.dialog.destroy()
+        
+    def cancel(self):
+        """User clicked Cancel"""
+        self.dialog.destroy()
 
 def main():
     root = tk.Tk()
