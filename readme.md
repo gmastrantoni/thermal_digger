@@ -13,12 +13,6 @@ A Python application for analyzing thermal image time series data. This tool all
 
 ## Installation
 
-### Using pip
-
-```bash
-pip install thermal-analyzer
-```
-
 ### From source
 
 ```bash
