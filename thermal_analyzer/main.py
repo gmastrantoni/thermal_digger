@@ -293,9 +293,7 @@ class ThermalImageGUI:
             return
             
         # Get the directory to save files
-        save_dir = filedialog.askdirectory(
-            title="Select Directory to Save Plots"
-        )
+        save_dir = filedialog.askdirectory(title="Select Directory to Save Plots")
         
         if save_dir:
             try:
