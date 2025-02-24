@@ -1,7 +1,7 @@
 numpy>=1.21.0
 pandas>=1.3.0
 matplotlib>=3.4.0
-tkinter>=8.6
+# tkinter>=8.6
 pillow>=8.0.0  # for image handling
 pytest>=6.0.0  # for testing
 black>=21.0.0  # for code formatting
