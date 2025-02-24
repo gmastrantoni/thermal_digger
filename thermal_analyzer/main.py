@@ -77,10 +77,17 @@ class ThermalImageGUI:
         mode_frame.grid(row=4, column=0, pady=5)
         
         self.mode_var = tk.StringVar(value="point")
-        ttk.Radiobutton(mode_frame, text="Point", variable=self.mode_var, 
+        ttk.Radiobutton(mode_frame, text="Points", variable=self.mode_var, 
                        value="point", command=self.change_mode).grid(row=0, column=0, padx=5)
         ttk.Radiobutton(mode_frame, text="Polygon", variable=self.mode_var, 
                        value="polygon", command=self.change_mode).grid(row=0, column=1, padx=5)
+        
+        # Add point control buttons
+        self.point_frame = ttk.Frame(self.control_frame)
+        self.point_frame.grid(row=5, column=0, pady=5)
+        
+        ttk.Button(self.point_frame, text="Clear All Points", 
+                  command=self.clear_selection).grid(row=0, column=0, pady=5)
         
         # Polygon controls section
         self.polygon_frame = ttk.Frame(self.control_frame)
@@ -218,14 +225,12 @@ class ThermalImageGUI:
             return
             
         if self.selection_mode == "point":
-            # Handle point selection
-            self.selected_point = [event.xdata, event.ydata]
-            self.plotter.clear_selection()
-            self.plotter.plot_point(event.xdata, event.ydata)
+            # Add new point and get its index
+            point_idx = self.plotter.plot_point(event.xdata, event.ydata)
             self.calculate_time_series()
             
         elif self.selection_mode == "polygon" and self.collecting_points:
-            # Handle polygon selection
+            # Handle polygon selection [unchanged]
             self.polygon_coords.append([event.xdata, event.ydata])
             self.plotter.plot_point(event.xdata, event.ydata)
             
@@ -255,21 +260,33 @@ class ThermalImageGUI:
         self.plotter.clear_selection()
     
     def calculate_time_series(self):
-        """Calculate and plot time series for point or polygon selection"""
-        if self.selection_mode == "point" and self.selected_point:
-            # Calculate time series for single point
-            x, y = int(round(self.selected_point[0])), int(round(self.selected_point[1]))
-            temperatures = []
+        """Calculate and plot time series for multiple points or polygon selection"""
+        if self.selection_mode == "point" and self.plotter.points:
+            # Calculate time series for all points
+            point_temperatures = {}
             
-            for csv_file in self.csv_files:
-                data = ThermalDataHandler.load_csv_data(csv_file)
-                temperatures.append(data[y, x])
+            for point_idx, (x, y, _) in enumerate(self.plotter.points):
+                temperatures = []
+                x_int, y_int = int(round(x)), int(round(y))
+                
+                for csv_file in self.csv_files:
+                    data = ThermalDataHandler.load_csv_data(csv_file)
+                    temperatures.append(data[y_int, x_int])
+                
+                point_temperatures[point_idx] = temperatures
             
-            # Plot single point time series
-            self.plotter.plot_time_series(self.timestamps, temperatures)
+            # Update stored data for export
+            self.plotter.current_timeseries_data.update({
+                'timestamps': self.timestamps,
+                'values': point_temperatures,
+                'selection_type': 'point'
+            })
+            
+            # Plot all point time series
+            self.plotter.plot_time_series(self.timestamps, point_temperatures)
             
         elif self.selection_mode == "polygon" and len(self.polygon_coords) >= 3:
-            # Calculate statistics for polygon region
+            # Calculate polygon statistics [unchanged]
             mask = self.plotter.create_polygon_mask(self.current_data.shape, self.polygon_coords)
             means = []
             mins = []
@@ -279,18 +296,26 @@ class ThermalImageGUI:
                 data = ThermalDataHandler.load_csv_data(csv_file)
                 masked_data = data[mask]
                 
-                if len(masked_data) > 0:  # Ensure we have data points in the polygon
+                if len(masked_data) > 0:
                     means.append(np.mean(masked_data))
                     mins.append(np.min(masked_data))
                     maxs.append(np.max(masked_data))
                 else:
-                    # Handle case where polygon contains no points
                     means.append(np.nan)
                     mins.append(np.nan)
                     maxs.append(np.nan)
             
+            # Update stored data for export
+            self.plotter.current_timeseries_data.update({
+                'timestamps': self.timestamps,
+                'values': {'mean': means},
+                'mins': mins,
+                'maxs': maxs,
+                'selection_type': 'polygon'
+            })
+            
             # Plot polygon statistics time series
-            self.plotter.plot_time_series(self.timestamps, means, mins, maxs)
+            self.plotter.plot_time_series(self.timestamps, {'mean': means}, mins, maxs)
 
     def get_default_save_directory(self):
         """
