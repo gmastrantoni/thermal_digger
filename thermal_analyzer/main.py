@@ -48,19 +48,31 @@ class ThermalImageGUI:
         self.plotter.get_click_handler().mpl_connect('button_press_event', self.on_click)
 
     def setup_controls(self):
-        """Setup control buttons with both point and polygon frames"""
-        # Load Files section
-        ttk.Button(self.control_frame, text="Load CSV Files", 
-                  command=self.load_csv_files).grid(row=0, column=0, pady=5)
+        """Setup control buttons with centered layout for better visual appearance"""
+        # Configure the control frame to allow centering
+        self.control_frame.grid_columnconfigure(0, weight=1)
+        
+        # Load Files section - centered button
+        files_frame = ttk.Frame(self.control_frame)
+        files_frame.grid(row=0, column=0, pady=5, sticky='ew')
+        files_frame.grid_columnconfigure(0, weight=1)
+        
+        load_button = ttk.Button(files_frame, text="Load CSV Files", command=self.load_csv_files)
+        load_button.grid(row=0, column=0, pady=5)
+        # Center the button by configuring the parent frame
+        files_frame.grid_rowconfigure(0, weight=1)
+        load_button.grid(row=0, column=0, padx=5, pady=5, sticky='n')
         
         # Add separator
         ttk.Separator(self.control_frame, orient='horizontal').grid(
             row=1, column=0, sticky='ew', pady=10)
             
-        # Image Navigation section
+        # Image Navigation section - centered navigation controls
         nav_frame = ttk.Frame(self.control_frame)
-        nav_frame.grid(row=2, column=0, pady=5)
+        nav_frame.grid(row=2, column=0, pady=5, sticky='ew')
+        nav_frame.grid_columnconfigure(1, weight=1)
         
+        # Center the navigation controls within their frame
         ttk.Button(nav_frame, text="◀ Previous", 
                   command=self.previous_image).grid(row=0, column=0, padx=2)
         self.image_label = ttk.Label(nav_frame, text="Image: 0/0")
@@ -72,26 +84,33 @@ class ThermalImageGUI:
         ttk.Separator(self.control_frame, orient='horizontal').grid(
             row=3, column=0, sticky='ew', pady=10)
         
-        # Selection Mode section
+        # Selection Mode section - centered radio buttons
         mode_frame = ttk.Frame(self.control_frame)
-        mode_frame.grid(row=4, column=0, pady=5)
+        mode_frame.grid(row=4, column=0, pady=5, sticky='ew')
+        mode_frame.grid_columnconfigure(0, weight=1)
+        mode_frame.grid_columnconfigure(3, weight=1)
         
+        # Use additional columns to center the radio buttons
         self.mode_var = tk.StringVar(value="point")
         ttk.Radiobutton(mode_frame, text="Points", variable=self.mode_var, 
-                       value="point", command=self.change_mode).grid(row=0, column=0, padx=5)
+                       value="point", command=self.change_mode).grid(row=0, column=1, padx=5)
         ttk.Radiobutton(mode_frame, text="Polygon", variable=self.mode_var, 
-                       value="polygon", command=self.change_mode).grid(row=0, column=1, padx=5)
+                       value="polygon", command=self.change_mode).grid(row=0, column=2, padx=5)
         
-        # Point controls section
+        # Create mode-specific control frames - with centering
+        self.control_frames_row = 5  # Row where control frames will be placed
+        
+        # Point controls frame - create with centered button
         self.point_frame = ttk.Frame(self.control_frame)
-        self.point_frame.grid(row=5, column=0, pady=5)
+        self.point_frame.grid_columnconfigure(0, weight=1)
         
-        ttk.Button(self.point_frame, text="Clear All Points", 
-                  command=self.clear_selection).grid(row=0, column=0, pady=5)
+        self.clear_points_button = ttk.Button(self.point_frame, text="Clear All Points", 
+                                           command=self.clear_selection)
+        self.clear_points_button.grid(row=0, column=0, pady=5)
         
-        # Polygon controls section
+        # Polygon controls frame - create with centered buttons
         self.polygon_frame = ttk.Frame(self.control_frame)
-        self.polygon_frame.grid(row=6, column=0, pady=5)
+        self.polygon_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Button(self.polygon_frame, text="Start Polygon", 
                   command=self.start_polygon).grid(row=0, column=0, pady=5)
@@ -105,28 +124,52 @@ class ThermalImageGUI:
         
         # Add separator
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=7, column=0, sticky='ew', pady=10)
+            row=6, column=0, sticky='ew', pady=10)
         
-        # Save and Clear section
-        ttk.Button(self.control_frame, text="Save Plots", 
-                  command=self.save_plots).grid(row=8, column=0, pady=5)
-        ttk.Button(self.control_frame, text="Clear Workspace", 
-                  command=self.clear_workspace).grid(row=9, column=0, pady=5)
+        # Save and Clear section - centered buttons
+        save_frame = ttk.Frame(self.control_frame)
+        save_frame.grid(row=7, column=0, pady=5, sticky='ew')
+        save_frame.grid_columnconfigure(0, weight=1)
+        
+        ttk.Button(save_frame, text="Save Plots", 
+                  command=self.save_plots).grid(row=0, column=0, pady=5)
+        
+        clear_frame = ttk.Frame(self.control_frame)
+        clear_frame.grid(row=8, column=0, pady=5, sticky='ew')
+        clear_frame.grid_columnconfigure(0, weight=1)
+        
+        ttk.Button(clear_frame, text="Clear Workspace", 
+                  command=self.clear_workspace).grid(row=0, column=0, pady=5)
 
     def update_control_visibility(self):
         """Update visibility of controls based on selection mode"""
+        # Remove both frames from grid first to avoid conflicts
+        self.point_frame.grid_forget()
+        self.polygon_frame.grid_forget()
+        
+        # Then add only the appropriate frame for the current mode with proper alignment
         if self.selection_mode == "polygon":
-            # Show polygon controls, hide point controls
-            for child in self.polygon_frame.winfo_children():
-                child.grid()
-            for child in self.point_frame.winfo_children():
-                child.grid_remove()
+            self.polygon_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
         else:  # point mode
-            # Hide polygon controls, show point controls
-            for child in self.polygon_frame.winfo_children():
-                child.grid_remove()
-            for child in self.point_frame.winfo_children():
-                child.grid()
+            self.point_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
+            
+        # Force update the display to ensure changes are immediately visible
+        self.root.update_idletasks()
+
+    def update_control_visibility(self):
+        """Update visibility of controls based on selection mode"""
+        # Remove both frames from grid first to avoid conflicts
+        self.point_frame.grid_forget()
+        self.polygon_frame.grid_forget()
+        
+        # Then add only the appropriate frame for the current mode
+        if self.selection_mode == "polygon":
+            self.polygon_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
+        else:  # point mode
+            self.point_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
+            
+        # Force update the display to ensure changes are immediately visible
+        self.root.update_idletasks()
 
 
     def setup_footer(self):
@@ -248,6 +291,7 @@ class ThermalImageGUI:
     def finish_polygon(self):
         """Complete polygon drawing and calculate statistics"""
         if len(self.polygon_coords) < 3:
+            messagebox.showwarning("Warning", "A polygon needs at least 3 points.")
             return
         
         self.collecting_points = False

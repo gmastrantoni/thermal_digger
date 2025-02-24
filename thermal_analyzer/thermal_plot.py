@@ -114,16 +114,29 @@ class ThermalPlotter:
         return point_num - 1
 
     def plot_line(self, x1, y1, x2, y2):
-        """Plot a line between two points"""
-        self.ax_thermal.plot([x1, x2], [y1, y2], 'w-')
+        """Plot a line between two points and track it for proper removal"""
+        line = self.ax_thermal.plot([x1, x2], [y1, y2], 'w--')[0]
+        # Add the line to the point_markers list for proper removal later
+        self.point_markers.append(line)
         self.canvas_thermal.draw()
 
     def plot_polygon(self, coords):
-        """Plot the completed polygon"""
+        """Plot the completed polygon and ensure it can be properly cleared"""
+        # Remove existing polygon if present
         if self.polygon_patch:
             self.polygon_patch.remove()
-        self.polygon_patch = Polygon(coords, fill=False, color='white')
+        
+        # Create new polygon with white outline
+        self.polygon_patch = Polygon(coords, fill=False, color='white', linewidth=2, linestyle='dashed')
         self.ax_thermal.add_patch(self.polygon_patch)
+        
+        # Complete the polygon by connecting last point to first point
+        if len(coords) > 2:
+            first_x, first_y = coords[0]
+            last_x, last_y = coords[-1]
+            closing_line = self.ax_thermal.plot([last_x, first_x], [last_y, first_y], 'w--')[0]
+            self.point_markers.append(closing_line)
+        
         self.canvas_thermal.draw()
 
     def plot_time_series(self, timestamps, values_dict=None, mins=None, maxs=None):
@@ -157,17 +170,28 @@ class ThermalPlotter:
         self.canvas_timeseries.draw()
     
     def clear_selection(self):
-        """Clear all points and reset color cycle"""
+        """
+        Clear all points and polygons completely from the thermal image.
+        This ensures all visual elements are properly removed.
+        """
+        # Clear all line and point markers
         for marker in self.point_markers:
             marker.remove()
         self.point_markers = []
         self.points = []
         self.current_color_idx = 0
         
+        # Properly remove the polygon patch
         if self.polygon_patch:
             self.polygon_patch.remove()
             self.polygon_patch = None
         
+        # Clear any additional lines that might be part of the polygon
+        # This is important because some lines might not be in point_markers
+        for line in self.ax_thermal.lines:
+            line.remove()
+        
+        # Reset data storage
         self.current_timeseries_data = {
             'timestamps': None,
             'values': {},
@@ -176,7 +200,10 @@ class ThermalPlotter:
             'selection_type': None
         }
         
+        # Redraw the canvas to ensure all elements are properly cleared
         self.canvas_thermal.draw()
+        
+        # Clear time series plot
         self.ax_timeseries.clear()
         self.canvas_timeseries.draw()
 
