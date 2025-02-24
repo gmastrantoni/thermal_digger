@@ -97,19 +97,21 @@ class ThermalPlotter:
         return color
 
     def plot_point(self, x, y):
-        """Plot a new point and return its index"""
+        """Plot a new point with simplified numbering"""
         color = self.get_next_color()
         self.points.append((x, y, color))
         
-        # Plot point with number label
+        # Plot point with simple number label
         point_num = len(self.points)
+        # Add the point marker with a plus sign
         marker = self.ax_thermal.plot(x, y, '+', color=color, markersize=10, linewidth=2)[0]
+        # Add the point number label
         text = self.ax_thermal.text(x + 1, y + 1, str(point_num), color=color, 
                                   fontweight='bold', bbox=dict(facecolor='white', alpha=0.7))
         
         self.point_markers.extend([marker, text])
         self.canvas_thermal.draw()
-        return point_num - 1  # Return index of new point
+        return point_num - 1
 
     def plot_line(self, x1, y1, x2, y2):
         """Plot a line between two points"""
@@ -125,18 +127,18 @@ class ThermalPlotter:
         self.canvas_thermal.draw()
 
     def plot_time_series(self, timestamps, values_dict=None, mins=None, maxs=None):
-        """Plot time series data for multiple points or polygon statistics"""
+        """Plot time series data with simplified labels in legend"""
         self.ax_timeseries.clear()
         
         if self.current_timeseries_data['selection_type'] == 'point':
-            # Plot multiple point time series
+            # Plot multiple point time series with simple point numbering
             for point_idx, values in values_dict.items():
-                x, y, color = self.points[point_idx]
-                label = f'Point {point_idx + 1} ({int(x)}, {int(y)})'
+                _, _, color = self.points[point_idx]
+                label = f'Point {point_idx + 1}'  # Simplified label
                 self.ax_timeseries.plot(timestamps, values, 'o', 
                                       color=color, label=label)
         else:
-            # Polygon statistics time series
+            # Polygon statistics time series (unchanged)
             self.ax_timeseries.plot(timestamps, values_dict['mean'], 'go--', label='Mean')
             self.ax_timeseries.plot(timestamps, mins, 'bo--', label='Min')
             self.ax_timeseries.plot(timestamps, maxs, 'ro--', label='Max')
@@ -263,7 +265,7 @@ class ThermalPlotter:
         return thermal_filename, timeseries_filename, csv_filename
     
     def _export_timeseries_data(self, filename):
-        """Export time series data to CSV file"""
+        """Export time series data to CSV with simplified column names"""
         if self.current_timeseries_data['timestamps'] is None:
             return
             
@@ -274,13 +276,12 @@ class ThermalPlotter:
         }
         
         if self.current_timeseries_data['selection_type'] == 'point':
-            # Add data for each point
+            # Add data for each point with simple numbering
             for point_idx, values in self.current_timeseries_data['values'].items():
-                x, y, _ = self.points[point_idx]
-                column_name = f'Point_{point_idx + 1}_({int(x)},{int(y)})'
+                column_name = f'Point_{point_idx + 1}'  # Simplified column name
                 data_dict[column_name] = values
         else:
-            # Polygon statistics
+            # Polygon statistics (unchanged)
             data_dict.update({
                 'Mean_Temperature': self.current_timeseries_data['values']['mean'],
                 'Min_Temperature': self.current_timeseries_data['mins'],

@@ -48,7 +48,7 @@ class ThermalImageGUI:
         self.plotter.get_click_handler().mpl_connect('button_press_event', self.on_click)
 
     def setup_controls(self):
-        """Setup control buttons"""
+        """Setup control buttons with both point and polygon frames"""
         # Load Files section
         ttk.Button(self.control_frame, text="Load CSV Files", 
                   command=self.load_csv_files).grid(row=0, column=0, pady=5)
@@ -82,7 +82,7 @@ class ThermalImageGUI:
         ttk.Radiobutton(mode_frame, text="Polygon", variable=self.mode_var, 
                        value="polygon", command=self.change_mode).grid(row=0, column=1, padx=5)
         
-        # Add point control buttons
+        # Point controls section
         self.point_frame = ttk.Frame(self.control_frame)
         self.point_frame.grid(row=5, column=0, pady=5)
         
@@ -91,7 +91,7 @@ class ThermalImageGUI:
         
         # Polygon controls section
         self.polygon_frame = ttk.Frame(self.control_frame)
-        self.polygon_frame.grid(row=5, column=0, pady=5)
+        self.polygon_frame.grid(row=6, column=0, pady=5)
         
         ttk.Button(self.polygon_frame, text="Start Polygon", 
                   command=self.start_polygon).grid(row=0, column=0, pady=5)
@@ -100,18 +100,34 @@ class ThermalImageGUI:
         ttk.Button(self.polygon_frame, text="Clear Selection", 
                   command=self.clear_selection).grid(row=2, column=0, pady=5)
         
-        # Initially hide polygon controls
+        # Initially set correct visibility based on mode
         self.update_control_visibility()
         
         # Add separator
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=6, column=0, sticky='ew', pady=10)
+            row=7, column=0, sticky='ew', pady=10)
         
         # Save and Clear section
         ttk.Button(self.control_frame, text="Save Plots", 
-                  command=self.save_plots).grid(row=7, column=0, pady=5)
+                  command=self.save_plots).grid(row=8, column=0, pady=5)
         ttk.Button(self.control_frame, text="Clear Workspace", 
-                  command=self.clear_workspace).grid(row=8, column=0, pady=5)
+                  command=self.clear_workspace).grid(row=9, column=0, pady=5)
+
+    def update_control_visibility(self):
+        """Update visibility of controls based on selection mode"""
+        if self.selection_mode == "polygon":
+            # Show polygon controls, hide point controls
+            for child in self.polygon_frame.winfo_children():
+                child.grid()
+            for child in self.point_frame.winfo_children():
+                child.grid_remove()
+        else:  # point mode
+            # Hide polygon controls, show point controls
+            for child in self.polygon_frame.winfo_children():
+                child.grid_remove()
+            for child in self.point_frame.winfo_children():
+                child.grid()
+
 
     def setup_footer(self):
         """Setup footer with development information and logo"""
@@ -171,15 +187,6 @@ class ThermalImageGUI:
         self.selection_mode = self.mode_var.get()
         self.clear_selection()
         self.update_control_visibility()
-    
-    def update_control_visibility(self):
-        """Update visibility of controls based on mode"""
-        if self.selection_mode == "polygon":
-            for child in self.polygon_frame.winfo_children():
-                child.grid()
-        else:
-            for child in self.polygon_frame.winfo_children():
-                child.grid_remove()
 
     def update_image_display(self):
         """Update the displayed thermal image and image counter"""
