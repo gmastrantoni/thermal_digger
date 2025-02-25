@@ -25,6 +25,8 @@ class ThermalImageGUI:
         self.current_image_index = 0
         self.selection_mode = "point"  # or "polygon"
         self.selected_point = None
+        self.global_min = None
+        self.global_max = None
         
         # Create main frames
         self.control_frame = ttk.Frame(self.root, padding="5")
@@ -221,7 +223,21 @@ class ThermalImageGUI:
         if files:
             self.csv_files = sorted(files)
             self.timestamps = [ThermalDataHandler.extract_datetime_from_filename(f) 
-                             for f in self.csv_files]
+                            for f in self.csv_files]
+            
+            # Determine global min and max values across all files
+            min_val = float('inf')
+            max_val = float('-inf')
+            
+            for csv_file in self.csv_files:
+                data = ThermalDataHandler.load_csv_data(csv_file)
+                min_val = min(min_val, np.min(data))
+                max_val = max(max_val, np.max(data))
+            
+            # Round min to nearest integer (floor) and max to nearest integer (ceiling)
+            self.global_min = round(min_val)
+            self.global_max = round(max_val)
+            
             self.current_image_index = 0
             self.update_image_display()
 
@@ -241,7 +257,10 @@ class ThermalImageGUI:
             self.csv_files[self.current_image_index])
         self.plotter.plot_thermal_image(
             self.current_data, 
-            self.timestamps[self.current_image_index])
+            self.timestamps[self.current_image_index],
+            vmin=self.global_min,  # Pass global min
+            vmax=self.global_max   # Pass global max
+            )
         
         # Update image counter label
         self.image_label.config(
@@ -467,6 +486,8 @@ class ThermalImageGUI:
         self.timestamps = []
         self.current_image_index = 0
         self.selected_point = None
+        self.global_min = None
+        self.global_max = None
         
         # Update image counter
         self.image_label.config(text="Image: 0/0")

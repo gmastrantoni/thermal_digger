@@ -64,8 +64,8 @@ class ThermalPlotter:
         # Set initial axes positions that will be maintained
         self.ax_thermal.set_position([0.1, 0.1, 0.75, 0.85])  # [left, bottom, width, height]
 
-    def plot_thermal_image(self, data, timestamp=None):
-        """Plot thermal image with optional timestamp"""
+    def plot_thermal_image(self, data, timestamp=None, vmin=None, vmax=None):
+        """Plot thermal image with optional timestamp and fixed colorbar range"""
         self.ax_thermal.clear()
         
         # Maintain consistent axes position
@@ -75,18 +75,23 @@ class ThermalPlotter:
         if len(self.fig_thermal.axes) > 1:
             self.fig_thermal.delaxes(self.fig_thermal.axes[1])
         
-        # Plot image with fixed aspect ratio
+        # Plot image with fixed aspect ratio and colorbar range
         im = self.ax_thermal.imshow(data, cmap=config.COLORMAP, aspect='equal', 
-                           interpolation='nearest')
+                        interpolation='nearest', vmin=vmin, vmax=vmax)
         
         # Add colorbar with consistent size
         cbar = self.fig_thermal.colorbar(im, ax=self.ax_thermal, 
-                                       label='Temperature (°C)',
-                                       pad=0.02)
+                                    label='Temperature (°C)',
+                                    pad=0.02)
         
+        # Create title with timestamp and colorbar range if available
+        title = 'Thermal Image'
         if timestamp:
-            title = f'Thermal Image - {timestamp.strftime("%Y-%m-%d %H:%M:%S")}'
-            self.ax_thermal.set_title(title, pad=10)
+            title = f'{title} - {timestamp.strftime("%Y-%m-%d %H:%M:%S")}'
+        # if vmin is not None and vmax is not None:
+        #     title = f'{title}\nColorbar Range: {vmin:.2f}°C to {vmax:.2f}°C'
+        
+        self.ax_thermal.set_title(title, pad=10)
         
         self.canvas_thermal.draw()
 
