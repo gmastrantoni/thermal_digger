@@ -12,7 +12,7 @@ class ThermalImageGUI:
         self.root = root
         self.root.title("Thermal Image Analyzer")
         # Set initial window size (width x height)
-        self.root.geometry("1200x800")
+        self.root.geometry("1200x900")
         # Set minimum window size
         self.root.minsize(900, 600)
         # Configure root window to expand
