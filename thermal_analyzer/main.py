@@ -11,7 +11,10 @@ class ThermalImageGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Thermal Image Analyzer")
-        
+        # Set initial window size (width x height)
+        self.root.geometry("1200x800")
+        # Set minimum window size
+        self.root.minsize(900, 600)
         # Configure root window to expand
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
@@ -149,21 +152,6 @@ class ThermalImageGUI:
         self.point_frame.grid_forget()
         self.polygon_frame.grid_forget()
         
-        # Then add only the appropriate frame for the current mode with proper alignment
-        if self.selection_mode == "polygon":
-            self.polygon_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
-        else:  # point mode
-            self.point_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
-            
-        # Force update the display to ensure changes are immediately visible
-        self.root.update_idletasks()
-
-    def update_control_visibility(self):
-        """Update visibility of controls based on selection mode"""
-        # Remove both frames from grid first to avoid conflicts
-        self.point_frame.grid_forget()
-        self.polygon_frame.grid_forget()
-        
         # Then add only the appropriate frame for the current mode
         if self.selection_mode == "polygon":
             self.polygon_frame.grid(row=self.control_frames_row, column=0, pady=5, sticky='ew')
@@ -218,12 +206,11 @@ class ThermalImageGUI:
         """Load and process CSV files"""
         files = filedialog.askopenfilenames(
             title="Select CSV files",
-            filetypes=[("CSV files", "*.csv")]
-        )
+            filetypes=[("CSV files", "*.csv")])
         if files:
             self.csv_files = sorted(files)
             self.timestamps = [ThermalDataHandler.extract_datetime_from_filename(f) 
-                            for f in self.csv_files]
+                               for f in self.csv_files]
             
             # Determine global min and max values across all files
             min_val = float('inf')
