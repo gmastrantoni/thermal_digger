@@ -6,6 +6,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Polygon
 from matplotlib.path import Path
 import tkinter as tk
+from tkinter import ttk
 from utils.config import config
 import matplotlib.colors as mcolors
 
@@ -356,3 +357,100 @@ class ThermalPlotter:
     def get_click_handler(self):
         """Return the canvas for click event binding"""
         return self.canvas_thermal
+    
+
+class DeltaAnalysisWindow:
+    """Window for displaying thermal time series delta analysis."""
+    def __init__(self, parent, timestamps, values_dict, window_size, selection_type):
+        """
+        Initialize delta analysis window.
+        
+        Parameters:
+        -----------
+        parent : tk.Tk
+            Parent window
+        timestamps : list
+            List of datetime objects
+        values_dict : dict
+            Dictionary mapping point indices (or 'mean') to temperature lists
+        window_size : int
+            Window size for computing delta (e.g., 2 means delta from 2 timestamps ago)
+        selection_type : str
+            'point' or 'polygon'
+        """
+        self.window = tk.Toplevel(parent)
+        self.window.title(f"Delta Analysis (Window Size: {window_size})")
+        self.window.geometry("800x400")
+        self.window.minsize(500, 250)
+        
+        # Configure the window to expand properly
+        self.window.grid_columnconfigure(0, weight=1)
+        self.window.grid_rowconfigure(0, weight=1)
+        
+        # Create matplotlib figure and canvas
+        self.fig = Figure(figsize=(8, 6), constrained_layout=True)
+        self.ax = self.fig.add_subplot(111)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.window)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
+        
+        # Compute and plot delta values
+        self.plot_delta_analysis(timestamps, values_dict, window_size, selection_type)
+        
+        # Add a close button
+        close_button = ttk.Button(self.window, text="Close", command=self.window.destroy)
+        close_button.grid(row=1, column=0, pady=10)
+    
+    def plot_delta_analysis(self, timestamps, values_dict, window_size, selection_type):
+        """
+        Compute and plot delta values.
+        
+        Delta is calculated as current value minus the value 'window_size' steps ago.
+        """
+        if len(timestamps) <= window_size:
+            self.ax.text(0.5, 0.5, 
+                    f"Not enough data points for window size {window_size}.\n"
+                    f"Need at least {window_size+1} data points.",
+                    ha='center', va='center', transform=self.ax.transAxes,
+                    fontsize=12)
+            self.canvas.draw()
+            return
+        
+        # Create copies of lists for delta calculation
+        delta_timestamps = timestamps[window_size:]
+        
+        # Calculate delta values for each point or polygon stats
+        if selection_type == 'point':
+            # For point selection
+            delta_values = {}
+            for point_idx, values in values_dict.items():
+                delta = [values[i] - values[i-window_size] for i in range(window_size, len(values))]
+                delta_values[point_idx] = delta
+                
+                # Plot with the same color scheme as original
+                label = f'Point {point_idx + 1}'
+                self.ax.plot(delta_timestamps, delta, 'o-', label=label)
+                
+        else:
+            # For polygon selection
+            mean_values = values_dict['mean']
+            delta_mean = [mean_values[i] - mean_values[i-window_size] 
+                        for i in range(window_size, len(mean_values))]
+            
+            # Plot mean delta
+            self.ax.plot(delta_timestamps, delta_mean, 'go--', label='Mean Δ')
+        
+        # Format the plot
+        self.fig.autofmt_xdate()
+        self.ax.set_xlabel('Time')
+        self.ax.set_ylabel('Temperature Change (°C)')
+        self.ax.set_title(f'Temperature Delta (Window Size: {window_size})')
+        self.ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        self.ax.grid(True)
+        
+        # Add zero reference line
+        self.ax.axhline(y=0, color='r', linestyle='-', alpha=0.3)
+        
+        # Adjust layout
+        self.fig.tight_layout()
+        self.canvas.draw()

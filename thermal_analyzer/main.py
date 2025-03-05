@@ -4,7 +4,7 @@ import numpy as np
 import os
 from PIL import Image, ImageTk
 from thermal_data import ThermalDataHandler
-from thermal_plot import ThermalPlotter
+from thermal_plot import ThermalPlotter, DeltaAnalysisWindow
 from utils.config import config
 
 class ThermalImageGUI:
@@ -48,6 +48,7 @@ class ThermalImageGUI:
         # Setup GUI components
         self.setup_controls()
         self.setup_footer()
+        self.setup_delta_analysis_controls()
         
         # Connect mouse events
         self.plotter.get_click_handler().mpl_connect('button_press_event', self.on_click)
@@ -315,6 +316,8 @@ class ThermalImageGUI:
         self.collecting_points = False
         self.selected_point = None
         self.plotter.clear_selection()
+        # Disable delta analysis button
+        self.delta_button.config(state=tk.DISABLED)
     
     def calculate_time_series(self):
         """Calculate and plot time series for multiple points or polygon selection"""
@@ -341,6 +344,9 @@ class ThermalImageGUI:
             
             # Plot all point time series
             self.plotter.plot_time_series(self.timestamps, point_temperatures)
+            
+            # Enable delta analysis button
+            self.delta_button.config(state=tk.NORMAL)
             
         elif self.selection_mode == "polygon" and len(self.polygon_coords) >= 3:
             # Calculate polygon statistics [unchanged]
@@ -373,6 +379,73 @@ class ThermalImageGUI:
             
             # Plot polygon statistics time series
             self.plotter.plot_time_series(self.timestamps, {'mean': means}, mins, maxs)
+            
+            # Enable delta analysis button
+            self.delta_button.config(state=tk.NORMAL)
+    
+
+    def setup_delta_analysis_controls(self):
+        """Setup controls for delta analysis"""
+        # Add separator after existing controls
+        ttk.Separator(self.control_frame, orient='horizontal').grid(
+            row=9, column=0, sticky='ew', pady=10)
+        
+        # Delta Analysis section - with title label
+        delta_title_frame = ttk.Frame(self.control_frame)
+        delta_title_frame.grid(row=10, column=0, pady=5, sticky='ew')
+        delta_title_frame.grid_columnconfigure(0, weight=1)
+        
+        ttk.Label(delta_title_frame, text="Delta Analysis", 
+                font=('Helvetica', 10, 'bold')).grid(row=0, column=0)
+        
+        # Window size selection
+        window_size_frame = ttk.Frame(self.control_frame)
+        window_size_frame.grid(row=11, column=0, pady=5, sticky='ew')
+        window_size_frame.grid_columnconfigure(0, weight=1)
+        window_size_frame.grid_columnconfigure(1, weight=1)
+        window_size_frame.grid_columnconfigure(2, weight=1)
+        
+        ttk.Label(window_size_frame, text="Window Size:").grid(row=0, column=0, sticky='e')
+        
+        self.window_size_var = tk.IntVar(value=2)
+        window_size_spinner = ttk.Spinbox(window_size_frame, from_=1, to=20, 
+                                        textvariable=self.window_size_var, width=5)
+        window_size_spinner.grid(row=0, column=1, sticky='w', padx=5)
+        
+        # Button to launch delta analysis
+        delta_button_frame = ttk.Frame(self.control_frame)
+        delta_button_frame.grid(row=12, column=0, pady=10, sticky='ew')
+        delta_button_frame.grid_columnconfigure(0, weight=1)
+        
+        self.delta_button = ttk.Button(delta_button_frame, text="Show Delta Analysis", 
+                                    command=self.show_delta_analysis)
+        self.delta_button.grid(row=0, column=0)
+        self.delta_button.config(state=tk.DISABLED)  # Initially disabled
+
+    def show_delta_analysis(self):
+        """Show delta analysis in a popup window"""
+        if not self.plotter.current_timeseries_data['timestamps']:
+            tk.messagebox.showwarning("Warning", "No time series data available for analysis.")
+            return
+        
+        window_size = self.window_size_var.get()
+        
+        if len(self.plotter.current_timeseries_data['timestamps']) <= window_size:
+            tk.messagebox.showwarning(
+                "Warning", 
+                f"Not enough data points for window size {window_size}. "
+                f"Need at least {window_size+1} data points."
+            )
+            return
+        
+        # Create the delta analysis window
+        DeltaAnalysisWindow(
+            self.root,
+            self.plotter.current_timeseries_data['timestamps'],
+            self.plotter.current_timeseries_data['values'],
+            window_size,
+            self.plotter.current_timeseries_data['selection_type']
+        )
 
     def get_default_save_directory(self):
         """
@@ -462,7 +535,7 @@ class ThermalImageGUI:
                 
             except Exception as e:
                 tk.messagebox.showerror("Error", f"Error saving files: {str(e)}")
-
+    
     def clear_workspace(self):
         """Reset the entire workspace to initial state"""
         # Clear data storage
@@ -475,12 +548,12 @@ class ThermalImageGUI:
         self.selected_point = None
         self.global_min = None
         self.global_max = None
-        
         # Update image counter
         self.image_label.config(text="Image: 0/0")
-        
         # Clear plots
         self.plotter.clear_workspace()
+        # Disable delta analysis button
+        self.delta_button.config(state=tk.DISABLED)
 
 class FileNameDialog:
     """Dialog for getting custom filename with optional timestamp"""
@@ -533,6 +606,7 @@ class FileNameDialog:
     def cancel(self):
         """User clicked Cancel"""
         self.dialog.destroy()
+
 
 def main():
     root = tk.Tk()
