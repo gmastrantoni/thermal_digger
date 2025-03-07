@@ -154,13 +154,13 @@ class ThermalPlotter:
             for point_idx, values in values_dict.items():
                 _, _, color = self.points[point_idx]
                 label = f'Point {point_idx + 1}'  # Simplified label
-                self.ax_timeseries.plot(timestamps, values, 'o', 
-                                      color=color, label=label)
+                self.ax_timeseries.plot(timestamps, values, 'o:', 
+                                      color=color, label=label, alpha=.85, markeredgecolor='k')
         else:
             # Polygon statistics time series (unchanged)
-            self.ax_timeseries.plot(timestamps, values_dict['mean'], 'go--', label='Mean')
-            self.ax_timeseries.plot(timestamps, mins, 'bo--', label='Min')
-            self.ax_timeseries.plot(timestamps, maxs, 'ro--', label='Max')
+            self.ax_timeseries.plot(timestamps, values_dict['mean'], 'go:', label='Mean', alpha=1, markeredgecolor='k')
+            self.ax_timeseries.plot(timestamps, mins, 'bo:', label='Min', alpha=.85, markeredgecolor='k')
+            self.ax_timeseries.plot(timestamps, maxs, 'ro:', label='Max', alpha=.85, markeredgecolor='k')
         
         self.fig_timeseries.autofmt_xdate()
         
@@ -429,7 +429,7 @@ class DeltaAnalysisWindow:
                 
                 # Plot with the same color scheme as original
                 label = f'Point {point_idx + 1}'
-                self.ax.plot(delta_timestamps, delta, 'o-', label=label)
+                self.ax.plot(delta_timestamps, delta, 'd:', label=label, alpha=.85, markeredgecolor='k')
                 
         else:
             # For polygon selection
@@ -438,7 +438,7 @@ class DeltaAnalysisWindow:
                         for i in range(window_size, len(mean_values))]
             
             # Plot mean delta
-            self.ax.plot(delta_timestamps, delta_mean, 'go--', label='Mean Δ')
+            self.ax.plot(delta_timestamps, delta_mean, 'bd:', label='Mean Δ', alpha=.85, markeredgecolor='k')
         
         # Format the plot
         self.fig.autofmt_xdate()
