@@ -6,6 +6,7 @@ from PIL import Image, ImageTk
 from thermal_data import ThermalDataHandler
 from thermal_plot import ThermalPlotter, DeltaAnalysisWindow
 from utils.config import config
+from utils.camera_types import CameraType
 
 class ThermalImageGUI:
     def __init__(self, root):
@@ -30,6 +31,7 @@ class ThermalImageGUI:
         self.selected_point = None
         self.global_min = None
         self.global_max = None
+        self.camera_type = CameraType.MOBOTIX  # Default camera type
         
         # Create main frames
         self.control_frame = ttk.Frame(self.root, padding="5")
@@ -58,9 +60,24 @@ class ThermalImageGUI:
         # Configure the control frame to allow centering
         self.control_frame.grid_columnconfigure(0, weight=1)
         
+        # Camera Type selection section
+        camera_frame = ttk.Frame(self.control_frame)
+        camera_frame.grid(row=0, column=0, pady=5, sticky='ew')
+        camera_frame.grid_columnconfigure(0, weight=1)
+        camera_frame.grid_columnconfigure(1, weight=1)
+        
+        ttk.Label(camera_frame, text="Camera Type:").grid(row=0, column=0, sticky='e', padx=5)
+        
+        self.camera_type_var = tk.StringVar(value=str(self.camera_type))
+        camera_combo = ttk.Combobox(camera_frame, textvariable=self.camera_type_var, 
+                                   values=[str(CameraType.MOBOTIX), str(CameraType.FLIR)],
+                                   width=10, state="readonly")
+        camera_combo.grid(row=0, column=1, sticky='w', padx=5)
+        camera_combo.bind("<<ComboboxSelected>>", self.on_camera_type_change)
+        
         # Load Files section - centered button
         files_frame = ttk.Frame(self.control_frame)
-        files_frame.grid(row=0, column=0, pady=5, sticky='ew')
+        files_frame.grid(row=1, column=0, pady=5, sticky='ew')
         files_frame.grid_columnconfigure(0, weight=1)
         
         load_button = ttk.Button(files_frame, text="Load CSV Files", command=self.load_csv_files)
@@ -71,11 +88,11 @@ class ThermalImageGUI:
         
         # Add separator
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=1, column=0, sticky='ew', pady=10)
+            row=2, column=0, sticky='ew', pady=10)
             
         # Image Navigation section - centered navigation controls
         nav_frame = ttk.Frame(self.control_frame)
-        nav_frame.grid(row=2, column=0, pady=5, sticky='ew')
+        nav_frame.grid(row=3, column=0, pady=5, sticky='ew')
         nav_frame.grid_columnconfigure(1, weight=1)
         
         # Center the navigation controls within their frame
@@ -88,11 +105,11 @@ class ThermalImageGUI:
         
         # Add separator
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=3, column=0, sticky='ew', pady=10)
+            row=4, column=0, sticky='ew', pady=10)
         
         # Selection Mode section - centered radio buttons
         mode_frame = ttk.Frame(self.control_frame)
-        mode_frame.grid(row=4, column=0, pady=5, sticky='ew')
+        mode_frame.grid(row=5, column=0, pady=5, sticky='ew')
         mode_frame.grid_columnconfigure(0, weight=1)
         mode_frame.grid_columnconfigure(3, weight=1)
         
@@ -104,7 +121,7 @@ class ThermalImageGUI:
                        value="polygon", command=self.change_mode).grid(row=0, column=2, padx=5)
         
         # Create mode-specific control frames - with centering
-        self.control_frames_row = 5  # Row where control frames will be placed
+        self.control_frames_row = 6  # Row where control frames will be placed
         
         # Point controls frame - create with centered button
         self.point_frame = ttk.Frame(self.control_frame)
@@ -127,26 +144,35 @@ class ThermalImageGUI:
         
         # Initially set correct visibility based on mode
         self.update_control_visibility()
-        
+
         # Add separator
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=6, column=0, sticky='ew', pady=10)
+            row=7, column=0, sticky='ew', pady=10)
         
         # Save and Clear section - centered buttons
         save_frame = ttk.Frame(self.control_frame)
-        save_frame.grid(row=7, column=0, pady=5, sticky='ew')
+        save_frame.grid(row=8, column=0, pady=5, sticky='ew')
         save_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Button(save_frame, text="Save Plots", 
                   command=self.save_plots).grid(row=0, column=0, pady=5)
         
         clear_frame = ttk.Frame(self.control_frame)
-        clear_frame.grid(row=8, column=0, pady=5, sticky='ew')
+        clear_frame.grid(row=9, column=0, pady=5, sticky='ew')
         clear_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Button(clear_frame, text="Clear Workspace", 
                   command=self.clear_workspace).grid(row=0, column=0, pady=5)
 
+    def on_camera_type_change(self, event=None):
+        """Handle camera type change"""
+        camera_type_str = self.camera_type_var.get()
+        self.camera_type = CameraType.from_string(camera_type_str)
+        
+        # If we already have loaded files, reload them with the new camera type
+        if self.csv_files:
+            self.clear_workspace()
+            self.load_csv_files(self.csv_files)
     def update_control_visibility(self):
         """Update visibility of controls based on selection mode"""
         # Remove both frames from grid first to avoid conflicts
@@ -203,31 +229,106 @@ class ThermalImageGUI:
             except Exception as e:
                 print(f"Error loading logo: {e}")
 
-    def load_csv_files(self):
+    
+    def load_csv_files(self, pre_selected_files=None):
         """Load and process CSV files"""
-        files = filedialog.askopenfilenames(
-            title="Select CSV files",
-            filetypes=[("CSV files", "*.csv")])
+        if pre_selected_files:
+            files = pre_selected_files
+        else:
+            files = filedialog.askopenfilenames(
+                title="Select CSV files",
+                filetypes=[("CSV files", "*.csv")])
+                
         if files:
-            self.csv_files = sorted(files)
-            self.timestamps = [ThermalDataHandler.extract_datetime_from_filename(f) 
-                               for f in self.csv_files]
+            # DEBUG ---------------------
+            # Enable debug output for sorting issues
+            from utils.debug_tools import debug_file_sorting
+            # debug_file_sorting(files)
+            
+            # First, extract timestamps for all files
+            file_timestamps = []
+            for f in files:
+                try:
+                    timestamp = ThermalDataHandler.extract_datetime_from_filename(f)
+                    file_timestamps.append((f, timestamp))
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to extract timestamp from {os.path.basename(f)}: {str(e)}")
+                    return
+            
+            # Sort files by timestamp
+            file_timestamps.sort(key=lambda x: x[1])
+            
+            # Extract the sorted files and timestamps
+            self.csv_files = [ft[0] for ft in file_timestamps]
+            self.timestamps = [ft[1] for ft in file_timestamps]
+            
+            # Print sorted files for debugging
+            print("\nFiles after sorting:")
+            for i, (file, timestamp) in enumerate(file_timestamps):
+                print(f"{i+1}. {os.path.basename(file)} - {timestamp}")
+            
+            # Show progress dialog for loading files
+            progress_window = tk.Toplevel(self.root)
+            progress_window.title("Loading Files")
+            progress_window.transient(self.root)
+            progress_window.grab_set()
+            progress_window.geometry("300x100")
+            progress_window.resizable(False, False)
+            
+            progress_label = ttk.Label(progress_window, text="Loading files...")
+            progress_label.pack(pady=10)
+            
+            progress_bar = ttk.Progressbar(progress_window, mode='determinate', length=250)
+            progress_bar.pack(pady=10)
+            
+            progress_window.update()
             
             # Determine global min and max values across all files
             min_val = float('inf')
             max_val = float('-inf')
             
-            for csv_file in self.csv_files:
-                data = ThermalDataHandler.load_csv_data(csv_file)
-                min_val = min(min_val, np.min(data))
-                max_val = max(max_val, np.max(data))
+            for idx, csv_file in enumerate(self.csv_files):
+                progress_label.config(text=f"Loading file {idx+1} of {len(self.csv_files)}...")
+                progress_bar['value'] = (idx / len(self.csv_files)) * 100
+                progress_window.update()
+                
+                try:
+                    data = ThermalDataHandler.load_csv_data(csv_file, self.camera_type)
+                    min_val = min(min_val, np.min(data))
+                    max_val = max(max_val, np.max(data))
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load file {os.path.basename(csv_file)}: {str(e)}")
+                    # Close progress window and return
+                    progress_window.destroy()
+                    return
             
             # Round min to nearest integer (floor) and max to nearest integer (ceiling)
             self.global_min = round(min_val)
             self.global_max = round(max_val)
             
             self.current_image_index = 0
+            
+            # Close progress window
+            progress_window.destroy()
+            
+            # Update the display with the first image
             self.update_image_display()
+            
+            # Show camera type and image dimensions info
+            try:
+                width, height = ThermalDataHandler.get_dimensions_from_metadata(
+                    self.csv_files[0], self.camera_type)
+                messagebox.showinfo("Files Loaded", 
+                                f"Loaded {len(self.csv_files)} files\n"
+                                f"Camera type: {str(self.camera_type)}\n"
+                                f"Image dimensions: {width}x{height}\n"
+                                f"Temperature range: {self.global_min}°C to {self.global_max}°C")
+            except Exception:
+                messagebox.showinfo("Files Loaded", 
+                                f"Loaded {len(self.csv_files)} files\n"
+                                f"Camera type: {str(self.camera_type)}\n"
+                                f"Temperature range: {self.global_min}°C to {self.global_max}°C")
+
 
     def change_mode(self):
         """Handle selection mode change"""
@@ -241,18 +342,21 @@ class ThermalImageGUI:
             return
             
         # Load and display current image
-        self.current_data = ThermalDataHandler.load_csv_data(
-            self.csv_files[self.current_image_index])
-        self.plotter.plot_thermal_image(
-            self.current_data, 
-            self.timestamps[self.current_image_index],
-            vmin=self.global_min,  # Pass global min
-            vmax=self.global_max   # Pass global max
-            )
-        
-        # Update image counter label
-        self.image_label.config(
-            text=f"Image: {self.current_image_index + 1}/{len(self.csv_files)}")
+        try:
+            self.current_data = ThermalDataHandler.load_csv_data(
+                self.csv_files[self.current_image_index], self.camera_type)
+            self.plotter.plot_thermal_image(
+                self.current_data, 
+                self.timestamps[self.current_image_index],
+                vmin=self.global_min,  # Pass global min
+                vmax=self.global_max   # Pass global max
+                )
+            
+            # Update image counter label
+            self.image_label.config(
+                text=f"Image: {self.current_image_index + 1}/{len(self.csv_files)}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to display image: {str(e)}")
 
     def next_image(self):
         """Display next image in the sequence"""
@@ -287,7 +391,7 @@ class ThermalImageGUI:
             self.calculate_time_series()
             
         elif self.selection_mode == "polygon" and self.collecting_points:
-            # Handle polygon selection [unchanged]
+            # Handle polygon selection
             self.polygon_coords.append([event.xdata, event.ydata])
             self.plotter.plot_point(event.xdata, event.ydata)
             
@@ -330,8 +434,19 @@ class ThermalImageGUI:
                 x_int, y_int = int(round(x)), int(round(y))
                 
                 for csv_file in self.csv_files:
-                    data = ThermalDataHandler.load_csv_data(csv_file)
-                    temperatures.append(data[y_int, x_int])
+                    try:
+                        data = ThermalDataHandler.load_csv_data(csv_file, self.camera_type)
+                        
+                        # Check if coordinates are within the bounds of the data
+                        if 0 <= y_int < data.shape[0] and 0 <= x_int < data.shape[1]:
+                            temperatures.append(data[y_int, x_int])
+                        else:
+                            # Handle out of bounds coordinates
+                            temperatures.append(np.nan)
+                            print(f"Warning: Point ({x_int}, {y_int}) is out of bounds for image {csv_file}")
+                    except Exception as e:
+                        temperatures.append(np.nan)
+                        print(f"Error processing file {csv_file}: {e}")
                 
                 point_temperatures[point_idx] = temperatures
             
@@ -349,24 +464,31 @@ class ThermalImageGUI:
             self.delta_button.config(state=tk.NORMAL)
             
         elif self.selection_mode == "polygon" and len(self.polygon_coords) >= 3:
-            # Calculate polygon statistics [unchanged]
-            mask = self.plotter.create_polygon_mask(self.current_data.shape, self.polygon_coords)
+            # Calculate polygon statistics
             means = []
             mins = []
             maxs = []
             
             for csv_file in self.csv_files:
-                data = ThermalDataHandler.load_csv_data(csv_file)
-                masked_data = data[mask]
-                
-                if len(masked_data) > 0:
-                    means.append(np.mean(masked_data))
-                    mins.append(np.min(masked_data))
-                    maxs.append(np.max(masked_data))
-                else:
+                try:
+                    data = ThermalDataHandler.load_csv_data(csv_file, self.camera_type)
+                    mask = self.plotter.create_polygon_mask(data.shape, self.polygon_coords)
+                    masked_data = data[mask]
+                    
+                    if len(masked_data) > 0:
+                        means.append(np.mean(masked_data))
+                        mins.append(np.min(masked_data))
+                        maxs.append(np.max(masked_data))
+                    else:
+                        means.append(np.nan)
+                        mins.append(np.nan)
+                        maxs.append(np.nan)
+                        print(f"Warning: No data points inside polygon for image {csv_file}")
+                except Exception as e:
                     means.append(np.nan)
                     mins.append(np.nan)
                     maxs.append(np.nan)
+                    print(f"Error processing file {csv_file}: {e}")
             
             # Update stored data for export
             self.plotter.current_timeseries_data.update({
@@ -388,11 +510,11 @@ class ThermalImageGUI:
         """Setup controls for delta analysis"""
         # Add separator after existing controls
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=9, column=0, sticky='ew', pady=10)
+            row=10, column=0, sticky='ew', pady=10)
         
         # Delta Analysis section - with title label
         delta_title_frame = ttk.Frame(self.control_frame)
-        delta_title_frame.grid(row=10, column=0, pady=5, sticky='ew')
+        delta_title_frame.grid(row=11, column=0, pady=5, sticky='ew')
         delta_title_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Label(delta_title_frame, text="Delta Analysis", 
@@ -400,7 +522,7 @@ class ThermalImageGUI:
         
         # Window size selection
         window_size_frame = ttk.Frame(self.control_frame)
-        window_size_frame.grid(row=11, column=0, pady=5, sticky='ew')
+        window_size_frame.grid(row=12, column=0, pady=5, sticky='ew')
         window_size_frame.grid_columnconfigure(0, weight=1)
         window_size_frame.grid_columnconfigure(1, weight=1)
         window_size_frame.grid_columnconfigure(2, weight=1)
@@ -414,7 +536,7 @@ class ThermalImageGUI:
         
         # Button to launch delta analysis
         delta_button_frame = ttk.Frame(self.control_frame)
-        delta_button_frame.grid(row=12, column=0, pady=10, sticky='ew')
+        delta_button_frame.grid(row=13, column=0, pady=10, sticky='ew')
         delta_button_frame.grid_columnconfigure(0, weight=1)
         
         self.delta_button = ttk.Button(delta_button_frame, text="Show Delta Analysis", 
@@ -504,6 +626,8 @@ class ThermalImageGUI:
                     timestamp = self.timestamps[self.current_image_index].strftime("%Y%m%d_%H%M%S")
                     base_name = f"{base_name}_{timestamp}"
                 
+                # Add camera type to filename
+                base_name = f"{base_name}_{str(self.camera_type).lower()}"
                 base_filename = os.path.join(save_dir, base_name)
                 
                 # Save plots and CSV

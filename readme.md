@@ -5,6 +5,7 @@ A Python application for analyzing thermal image time series data. This tool all
 ## Features
 
 - Load and visualize thermal image data from CSV files
+- Support for multiple thermal camera formats (Mobotix and FLIR)
 - Navigate through time series of thermal images
 - Select individual points or define polygon regions for analysis
 - Calculate and plot temperature time series over time
@@ -44,19 +45,25 @@ main()
 ### Basic workflow
 
 1. Launch the application
-2. Load CSV files containing thermal data
-3. Choose analysis mode (point or polygon)
-4. Select region of interest
-5. View temperature trends over time
-6. Export results as needed
+2. Select the appropriate camera type (Mobotix or FLIR)
+3. Load CSV files containing thermal data
+4. Choose analysis mode (point or polygon)
+5. Select region of interest
+6. View temperature trends over time
+7. Export results as needed
 
-## Data Format
+## Data Formats
 
-The application expects CSV files with the following format:
+The application supports the following thermal camera formats:
 
-- First 8 rows: metadata including image dimensions
-- Remaining rows: temperature data in Celsius
+### Mobotix Format
+- First 8 rows: metadata including image dimensions (width; height)
+- Semicolon (;) separated values
 - Filename format: YYYYMMDD_HHMMSS_thermal_celsius.csv
+
+### FLIR Format
+- First 6 rows: metadata with "Key = Value" format
+- Comma-separated values in scientific notation (e.g., 6.69e+00)
 
 ## Contributing
 

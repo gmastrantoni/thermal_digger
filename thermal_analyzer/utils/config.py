@@ -8,7 +8,7 @@ from typing import Optional
 class Config:
     # Application settings
     APP_NAME: str = "Thermal Image Analyzer"
-    VERSION: str = "1.1.1"
+    VERSION: str = "1.2.0"
     
     # Development info
     DEVELOPER: str = "Giandomenico Mastrantoni"
