@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from datetime import datetime
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.patches import Polygon
@@ -9,6 +11,11 @@ import tkinter as tk
 from tkinter import ttk
 from utils.config import config
 import matplotlib.colors as mcolors
+import os
+import webbrowser
+from plotly.offline import plot
+from plotly.io import to_html
+
 
 class ThermalPlotter:
     def __init__(self, plot_frame):
@@ -37,6 +44,11 @@ class ThermalPlotter:
             'maxs': None,
             'selection_type': None
         }
+
+        # Create temp directory for plot files if it doesn't exist
+        self.temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
+        if not os.path.exists(self.temp_dir):
+            os.makedirs(self.temp_dir)
         
         self.setup_plots()
 
@@ -50,7 +62,7 @@ class ThermalPlotter:
         canvas_widget = self.canvas_thermal.get_tk_widget()
         canvas_widget.grid(row=0, column=0, padx=5, pady=5, sticky='nsew')
         
-        # Time series plot
+        # Time series plot (using regular matplotlib for consistency)
         self.fig_timeseries = Figure(figsize=(10, 4), constrained_layout=True)
         self.ax_timeseries = self.fig_timeseries.add_subplot(111)
         self.canvas_timeseries = FigureCanvasTkAgg(self.fig_timeseries, master=self.plot_frame)
@@ -172,8 +184,111 @@ class ThermalPlotter:
         
         # Adjust layout to prevent legend cutoff
         self.fig_timeseries.tight_layout()
+
+        # Create the interactive plot HTML file
+        self.create_interactive_plot(timestamps, values_dict, mins, maxs)
         
         self.canvas_timeseries.draw()
+    
+    def create_interactive_plot(self, timestamps, values_dict, mins=None, maxs=None):
+        """Create the interactive Plotly plot and save to an HTML file"""
+        # Create a Plotly figure
+        fig = go.Figure()
+        
+        # Format timestamps for display
+        formatted_dates = [ts.strftime('%Y-%m-%d %H:%M:%S') for ts in timestamps]
+        
+        # Add traces based on selection type
+        if self.current_timeseries_data['selection_type'] == 'point':
+            # Plot multiple point time series with simple point numbering
+            for point_idx, values in values_dict.items():
+                _, _, color = self.points[point_idx]
+                label = f'Point {point_idx + 1}'  # Simplified label
+                
+                fig.add_trace(go.Scatter(
+                    x=formatted_dates,
+                    y=values,
+                    mode='lines+markers',
+                    name=label,
+                    line=dict(color=color),
+                    marker=dict(size=8, line=dict(width=1, color='black')),
+                    hovertemplate='<b>%{fullData.name}</b><br>Time: %{x}<br>Temperature: %{y:.2f}°C<extra></extra>'
+                ))
+                
+        else:
+            # Polygon statistics time series
+            fig.add_trace(go.Scatter(
+                x=formatted_dates,
+                y=values_dict['mean'],
+                mode='lines+markers',
+                name='Mean',
+                line=dict(color='green'),
+                marker=dict(size=8, line=dict(width=1, color='black')),
+                hovertemplate='<b>Mean</b><br>Time: %{x}<br>Temperature: %{y:.2f}°C<extra></extra>'
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=formatted_dates,
+                y=mins,
+                mode='lines+markers',
+                name='Min',
+                line=dict(color='blue'),
+                marker=dict(size=8, line=dict(width=1, color='black')),
+                hovertemplate='<b>Min</b><br>Time: %{x}<br>Temperature: %{y:.2f}°C<extra></extra>'
+            ))
+            
+            fig.add_trace(go.Scatter(
+                x=formatted_dates,
+                y=maxs,
+                mode='lines+markers',
+                name='Max',
+                line=dict(color='red'),
+                marker=dict(size=8, line=dict(width=1, color='black')),
+                hovertemplate='<b>Max</b><br>Time: %{x}<br>Temperature: %{y:.2f}°C<extra></extra>'
+            ))
+        
+        # Update layout for better appearance
+        fig.update_layout(
+            title='Interactive Temperature Time Series',
+            xaxis_title='Time',
+            yaxis_title='Temperature (°C)',
+            hovermode='closest',
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            margin=dict(l=20, r=20, t=40, b=20),
+            plot_bgcolor='white',
+            xaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                showline=True,
+                linecolor='black',
+                linewidth=1
+            ),
+            yaxis=dict(
+                showgrid=True,
+                gridcolor='lightgray',
+                showline=True,
+                linecolor='black',
+                linewidth=1
+            )
+        )
+        
+        # Save the plot to a temporary HTML file
+        self.temp_html_path = os.path.join(self.temp_dir, "temp_plot.html")
+        with open(self.temp_html_path, "w") as f:
+            f.write(to_html(fig, include_plotlyjs='cdn', full_html=True))
+    
+    def open_interactive_plot(self):
+        """Open the interactive plot in the default web browser"""
+        if hasattr(self, 'temp_html_path') and os.path.exists(self.temp_html_path):
+            webbrowser.open('file://' + os.path.abspath(self.temp_html_path))
+    
+    # --------------------------------------
     
     def clear_selection(self):
         """
@@ -289,6 +404,78 @@ class ThermalPlotter:
         timeseries_filename = f"{base_filename}_timeseries.png"
         self.fig_timeseries.savefig(timeseries_filename, bbox_inches='tight', dpi=300)
 
+        # Also save an interactive HTML version if we have time series data
+        html_filename = None
+        if self.current_timeseries_data['timestamps'] is not None:
+            html_filename = f"{base_filename}_interactive_timeseries.html"
+            
+            # Create a new Plotly figure for saving
+            fig = go.Figure()
+            
+            formatted_dates = [ts.strftime('%Y-%m-%d %H:%M:%S') 
+                              for ts in self.current_timeseries_data['timestamps']]
+            
+            if self.current_timeseries_data['selection_type'] == 'point':
+                for point_idx, values in self.current_timeseries_data['values'].items():
+                    if point_idx < len(self.points):  # Make sure the point exists
+                        _, _, color = self.points[point_idx]
+                        label = f'Point {point_idx + 1}'
+                        
+                        fig.add_trace(go.Scatter(
+                            x=formatted_dates,
+                            y=values,
+                            mode='lines+markers',
+                            name=label,
+                            line=dict(color=color),
+                            marker=dict(size=8, line=dict(width=1, color='black'))
+                        ))
+            else:
+                fig.add_trace(go.Scatter(
+                    x=formatted_dates,
+                    y=self.current_timeseries_data['values']['mean'],
+                    mode='lines+markers',
+                    name='Mean',
+                    line=dict(color='green'),
+                    marker=dict(size=8, line=dict(width=1, color='black'))
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=formatted_dates,
+                    y=self.current_timeseries_data['mins'],
+                    mode='lines+markers',
+                    name='Min',
+                    line=dict(color='blue'),
+                    marker=dict(size=8, line=dict(width=1, color='black'))
+                ))
+                
+                fig.add_trace(go.Scatter(
+                    x=formatted_dates,
+                    y=self.current_timeseries_data['maxs'],
+                    mode='lines+markers',
+                    name='Max',
+                    line=dict(color='red'),
+                    marker=dict(size=8, line=dict(width=1, color='black'))
+                ))
+            
+            # Update layout
+            fig.update_layout(
+                title='Interactive Temperature Time Series',
+                xaxis_title='Time',
+                yaxis_title='Temperature (°C)',
+                hovermode='closest',
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                )
+            )
+            
+            # Save the interactive HTML file
+            with open(html_filename, 'w') as f:
+                f.write(to_html(fig, include_plotlyjs='cdn', full_html=True))
+
         # Save time series data as CSV if available
         csv_filename = None
         if self.current_timeseries_data['timestamps'] is not None:
@@ -296,6 +483,8 @@ class ThermalPlotter:
             self._export_timeseries_data(csv_filename)
         
         return thermal_filename, timeseries_filename, csv_filename
+    
+
     
     def _export_timeseries_data(self, filename):
         """Export time series data to CSV with simplified column names"""
@@ -330,29 +519,6 @@ class ThermalPlotter:
             
         df.to_csv(filename, index=False)
 
-
-    # def clear_selection(self):
-    #     """Clear current selection (point or polygon) and markers"""
-    #     if self.polygon_patch:
-    #         self.polygon_patch.remove()
-    #         self.polygon_patch = None
-        
-    #     # Clear any point markers
-    #     for artist in self.ax_thermal.lines:
-    #         artist.remove()
-        
-    #     # Clear stored time series data
-    #     self.current_timeseries_data = {
-    #         'timestamps': None,
-    #         'values': None,
-    #         'mins': None,
-    #         'maxs': None,
-    #         'selection_type': None
-    #         }
-
-    #     self.canvas_thermal.draw()
-    #     self.ax_timeseries.clear()
-    #     self.canvas_timeseries.draw()
 
     def get_click_handler(self):
         """Return the canvas for click event binding"""

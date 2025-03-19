@@ -7,3 +7,5 @@ pytest>=6.0.0  # for testing
 black>=21.0.0  # for code formatting
 flake8>=3.9.0  # for code linting
 mypy>=0.910  # for type checking
+plotly>=5.5.0
+pywebview>=3.6.0  # Optional: for embedded web view

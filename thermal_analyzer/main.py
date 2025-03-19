@@ -7,6 +7,11 @@ from thermal_data import ThermalDataHandler
 from thermal_plot import ThermalPlotter, DeltaAnalysisWindow
 from utils.config import config
 from utils.camera_types import CameraType
+import webbrowser
+try:
+    import webview  # Optional: for embedded web viewing
+except ImportError:
+    webview = None  # Will fall back to browser-based viewing
 
 class ThermalImageGUI:
     def __init__(self, root):
@@ -149,20 +154,35 @@ class ThermalImageGUI:
         ttk.Separator(self.control_frame, orient='horizontal').grid(
             row=7, column=0, sticky='ew', pady=10)
         
-        # Save and Clear section - centered buttons
+        # Interactive Plot Button - add this above Save Plots button
+        interactive_frame = ttk.Frame(self.control_frame)
+        interactive_frame.grid(row=8, column=0, pady=5, sticky='ew')
+        interactive_frame.grid_columnconfigure(0, weight=1)
+        
+        self.interactive_button = ttk.Button(interactive_frame, text="Open Interactive Plot", 
+                                             command=self.open_interactive_plot, state=tk.DISABLED)
+        self.interactive_button.grid(row=0, column=0, pady=5)
+        
+        # Save Plots Button
         save_frame = ttk.Frame(self.control_frame)
-        save_frame.grid(row=8, column=0, pady=5, sticky='ew')
+        save_frame.grid(row=9, column=0, pady=5, sticky='ew')
         save_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Button(save_frame, text="Save Plots", 
-                  command=self.save_plots).grid(row=0, column=0, pady=5)
+                   command=self.save_plots).grid(row=0, column=0, pady=5)
         
+        # Clear Workspace Button
         clear_frame = ttk.Frame(self.control_frame)
-        clear_frame.grid(row=9, column=0, pady=5, sticky='ew')
+        clear_frame.grid(row=10, column=0, pady=5, sticky='ew')
         clear_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Button(clear_frame, text="Clear Workspace", 
-                  command=self.clear_workspace).grid(row=0, column=0, pady=5)
+                   command=self.clear_workspace).grid(row=0, column=0, pady=5)
+
+    def open_interactive_plot(self):
+        """Open the interactive plot in the default web browser"""
+        if hasattr(self.plotter, 'open_interactive_plot'):
+            self.plotter.open_interactive_plot()
 
     def on_camera_type_change(self, event=None):
         """Handle camera type change"""
@@ -294,8 +314,8 @@ class ThermalImageGUI:
                 
                 try:
                     data = ThermalDataHandler.load_csv_data(csv_file, self.camera_type)
-                    min_val = min(min_val, np.min(data))
-                    max_val = max(max_val, np.max(data))
+                    min_val = min(min_val, np.percentile(data, 15))
+                    max_val = max(max_val, np.percentile(data, 95))
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to load file {os.path.basename(csv_file)}: {str(e)}")
                     # Close progress window and return
@@ -422,6 +442,8 @@ class ThermalImageGUI:
         self.plotter.clear_selection()
         # Disable delta analysis button
         self.delta_button.config(state=tk.DISABLED)
+        # Also disable interactive plot button
+        self.interactive_button.config(state=tk.DISABLED)
     
     def calculate_time_series(self):
         """Calculate and plot time series for multiple points or polygon selection"""
@@ -462,6 +484,8 @@ class ThermalImageGUI:
             
             # Enable delta analysis button
             self.delta_button.config(state=tk.NORMAL)
+            # Also enable interactive plot button
+            self.interactive_button.config(state=tk.NORMAL)
             
         elif self.selection_mode == "polygon" and len(self.polygon_coords) >= 3:
             # Calculate polygon statistics
@@ -504,17 +528,19 @@ class ThermalImageGUI:
             
             # Enable delta analysis button
             self.delta_button.config(state=tk.NORMAL)
-    
+            # Also enable interactive plot button
+            self.interactive_button.config(state=tk.NORMAL)
 
+    
     def setup_delta_analysis_controls(self):
         """Setup controls for delta analysis"""
         # Add separator after existing controls
         ttk.Separator(self.control_frame, orient='horizontal').grid(
-            row=10, column=0, sticky='ew', pady=10)
+            row=11, column=0, sticky='ew', pady=10)  # Updated row number
         
         # Delta Analysis section - with title label
         delta_title_frame = ttk.Frame(self.control_frame)
-        delta_title_frame.grid(row=11, column=0, pady=5, sticky='ew')
+        delta_title_frame.grid(row=12, column=0, pady=5, sticky='ew')  # Updated row number
         delta_title_frame.grid_columnconfigure(0, weight=1)
         
         ttk.Label(delta_title_frame, text="Delta Analysis", 
@@ -522,7 +548,7 @@ class ThermalImageGUI:
         
         # Window size selection
         window_size_frame = ttk.Frame(self.control_frame)
-        window_size_frame.grid(row=12, column=0, pady=5, sticky='ew')
+        window_size_frame.grid(row=13, column=0, pady=5, sticky='ew')  # Updated row number
         window_size_frame.grid_columnconfigure(0, weight=1)
         window_size_frame.grid_columnconfigure(1, weight=1)
         window_size_frame.grid_columnconfigure(2, weight=1)
@@ -536,7 +562,7 @@ class ThermalImageGUI:
         
         # Button to launch delta analysis
         delta_button_frame = ttk.Frame(self.control_frame)
-        delta_button_frame.grid(row=13, column=0, pady=10, sticky='ew')
+        delta_button_frame.grid(row=14, column=0, pady=10, sticky='ew')  # Updated row number
         delta_button_frame.grid_columnconfigure(0, weight=1)
         
         self.delta_button = ttk.Button(delta_button_frame, text="Show Delta Analysis", 
@@ -678,6 +704,8 @@ class ThermalImageGUI:
         self.plotter.clear_workspace()
         # Disable delta analysis button
         self.delta_button.config(state=tk.DISABLED)
+        # Also disable interactive plot button
+        self.interactive_button.config(state=tk.DISABLED)
 
 class FileNameDialog:
     """Dialog for getting custom filename with optional timestamp"""

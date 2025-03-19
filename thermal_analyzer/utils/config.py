@@ -25,8 +25,8 @@ class Config:
     METADATA_ROWS: int = 8
     
     # Plot settings
-    COLORMAP: str = "inferno"
-    FIGURE_DPI: int = 300
+    COLORMAP: str = "Greys"
+    FIGURE_DPI: int = 600
     
     # Export settings
     DEFAULT_EXPORT_DIR: str = os.path.expanduser("~/Documents/ThermalAnalyzer")
