@@ -32,15 +32,9 @@ pip install -e .
 ### Running the application
 
 ```bash
-thermal-analyzer
+python ./thermal_analyzer/main.py
 ```
 
-Or from Python:
-
-```python
-from thermal_analyzer.main import main
-main()
-```
 
 ### Basic workflow
 
@@ -73,13 +67,6 @@ The application supports the following thermal camera formats:
 4. Run tests
 5. Submit a pull request
 
-## Testing
-
-Run the test suite:
-
-```bash
-pytest
-```
 
 ## License
 
