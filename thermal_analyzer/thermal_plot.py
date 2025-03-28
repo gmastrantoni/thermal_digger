@@ -166,8 +166,7 @@ class ThermalPlotter:
             for point_idx, values in values_dict.items():
                 _, _, color = self.points[point_idx]
                 label = f'Point {point_idx + 1}'  # Simplified label
-                self.ax_timeseries.plot(timestamps, values, 'o:', 
-                                      color=color, label=label, alpha=.85, markeredgecolor='k')
+                self.ax_timeseries.plot(timestamps, values, 'o:', markersize=5, color=color, label=label, alpha=.85, markeredgecolor='k')
         else:
             # Polygon statistics time series (unchanged)
             self.ax_timeseries.plot(timestamps, values_dict['mean'], 'go:', label='Mean', alpha=1, markeredgecolor='k')

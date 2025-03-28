@@ -1,0 +1,17 @@
+Edge Detection Parameters:
+method: canny
+sigma: 0.3
+threshold: 0.5
+low_threshold: 0.4
+high_threshold: 1.4
+
+Edge Detection Metrics:
+Number of Edge Pixels: 21607
+Edge Density: 25.52%
+Number of Contours: 3177
+Total Edge Length: 52097.0 pixels
+Mean Temperature Gradient: 0.23°C/pixel
+Max Temperature Gradient: 2.80°C/pixel
+Average Contour Length: 16.4 pixels
+Longest Contour: 449.0 pixels
+Shortest Contour: 5.0 pixels

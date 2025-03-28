@@ -2,11 +2,14 @@ import tkinter as tk
 from tkinter import filedialog, ttk, messagebox
 import numpy as np
 import os
+import platform
 from PIL import Image, ImageTk
 from thermal_data import ThermalDataHandler
 from thermal_plot import ThermalPlotter, DeltaAnalysisWindow
 from utils.config import config
 from utils.camera_types import CameraType
+from image_analysis_launcher import add_change_detection_launcher
+
 import webbrowser
 try:
     import webview  # Optional: for embedded web viewing
@@ -21,6 +24,10 @@ class ThermalImageGUI:
         self.root.geometry("1200x900")
         # Set minimum window size
         self.root.minsize(900, 600)
+
+        # Set application icon
+        self.set_app_icon()
+
         # Configure root window to expand
         self.root.grid_columnconfigure(1, weight=1)
         self.root.grid_rowconfigure(0, weight=1)
@@ -56,9 +63,95 @@ class ThermalImageGUI:
         self.setup_controls()
         self.setup_footer()
         self.setup_delta_analysis_controls()
+
+        # Add thermal change detection launcher
+        self.change_detection_button = add_change_detection_launcher(self)
         
         # Connect mouse events
         self.plotter.get_click_handler().mpl_connect('button_press_event', self.on_click)
+    
+
+    def set_app_icon(self):
+        """Set the application icon for all platforms."""
+        try:
+            # First verify the icon exists
+            if not os.path.exists(config.ICON_PATH):
+                print(f"Warning: Icon file not found at {config.ICON_PATH}")
+                return
+                
+            if platform.system() == "Windows":
+                # For Windows - use iconbitmap with .ico file if available
+                if hasattr(config, 'ICON_ICO_PATH') and os.path.exists(config.ICON_ICO_PATH):
+                    self.root.iconbitmap(config.ICON_ICO_PATH)
+                else:
+                    # If .ico not available, try using PhotoImage with PNG
+                    icon_image = tk.PhotoImage(file=config.ICON_PATH)
+                    self.root.iconphoto(False, icon_image)
+                    
+            elif platform.system() == "Darwin":  # macOS
+                # For macOS - set both window icon and dock icon
+                icon_image = tk.PhotoImage(file=config.ICON_PATH)
+                self.root.iconphoto(True, icon_image)
+                
+                # Attempt to set the dock icon using various methods
+                self._set_macos_dock_icon()
+                    
+            else:  # Linux and other platforms
+                # For Linux - use iconphoto
+                icon_image = tk.PhotoImage(file=config.ICON_PATH)
+                self.root.iconphoto(True, icon_image)
+                
+        except Exception as e:
+            print(f"Failed to set application icon: {e}")
+
+    def _set_macos_dock_icon(self):
+        """Set the macOS dock icon using the most appropriate available method."""
+        try:
+            # Method 1: Try PyObjC if available (best solution)
+            try:
+                import objc
+                from AppKit import NSImage, NSApplication
+                
+                # Get the shared application instance
+                app = NSApplication.sharedApplication()
+                
+                # Load the image
+                image = NSImage.alloc().initWithContentsOfFile_(config.ICON_PATH)
+                
+                # Set the dock icon
+                app.setApplicationIconImage_(image)
+                # print("macOS dock icon set successfully using PyObjC")
+                return True
+            except ImportError:
+                pass
+                
+            # Method 2: Try AppleScript as fallback
+            try:
+                import subprocess
+                absolute_path = os.path.abspath(config.ICON_PATH)
+                
+                # Escape special characters in the path
+                escaped_path = absolute_path.replace('"', '\\"')
+                
+                script = f'''
+                tell application "System Events"
+                    tell process "Python" 
+                        set icon to "{escaped_path}"
+                    end tell
+                end tell
+                '''
+                subprocess.run(["osascript", "-e", script])
+                # print("macOS dock icon set using AppleScript fallback")
+                return True
+            except Exception as e:
+                print(f"AppleScript method failed: {e}")
+                
+            # If we get here, both methods failed
+            return False
+            
+        except Exception as e:
+            print(f"Failed to set macOS dock icon: {e}")
+            return False
 
     def setup_controls(self):
         """Setup control buttons with centered layout for better visual appearance"""
@@ -229,10 +322,10 @@ class ThermalImageGUI:
         ttk.Label(info_frame, text=config.COPYRIGHT, style="Footer.TLabel").pack(side=tk.LEFT, padx=5)
         
         # Add logo if it exists
-        if os.path.exists(config.LOGO_PATH):
+        if os.path.exists(config.ICON_PATH):
             try:
                 # Load and resize logo
-                logo = Image.open(config.LOGO_PATH)
+                logo = Image.open(config.ICON_PATH)
                 # Resize logo to height of 30 pixels while maintaining aspect ratio
                 logo_height = 30
                 aspect_ratio = logo.width / logo.height
@@ -761,8 +854,28 @@ class FileNameDialog:
 
 
 def main():
+    """
+    Main function to start the application.
+    """
     root = tk.Tk()
     app = ThermalImageGUI(root)
+    
+    # # Set window icon if it exists
+    # icon_path = os.path.join(os.path.dirname(__file__), 'resources', 'app_icon.png')
+    # if os.path.exists(icon_path):
+    #     try:
+    #         root.iconbitmap(icon_path)
+    #     except tk.TclError:
+    #         # Icon setting failed, just continue without an icon
+    #         pass
+    
+    # Center the window on screen
+    window_width = root.winfo_reqwidth()
+    window_height = root.winfo_reqheight()
+    position_right = int(root.winfo_screenwidth()/2 - window_width/2)
+    position_down = int(root.winfo_screenheight()/2 - window_height/2)
+    root.geometry(f"+{position_right}+{position_down}")
+    
     root.mainloop()
 
 if __name__ == "__main__":

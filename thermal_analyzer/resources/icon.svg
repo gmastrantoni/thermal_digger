@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 512 512"
+   version="1.1"
+   id="svg15"
+   sodipodi:docname="app_icon.svg"
+   inkscape:export-filename="app_icon.png"
+   inkscape:export-xdpi="150"
+   inkscape:export-ydpi="150"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview15"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.4609375"
+     inkscape:cx="254.91525"
+     inkscape:cy="254.91525"
+     inkscape:window-width="1512"
+     inkscape:window-height="862"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg15" />
+  <!-- No background -->
+  <!-- Structure outline - building/structure being monitored -->
+  <path
+     d="M 80.772888,377.63117 V 80.727205 H 425.18147 V 377.63117"
+     stroke="#505050"
+     stroke-width="17.8142"
+     fill="none"
+     id="path1" />
+  <!-- Thermal gradient visualization - scientifically accurate infrared palette -->
+  <defs
+     id="defs6">
+    <linearGradient
+       id="thermalGradient"
+       x1="146.05935"
+       y1="208.13457"
+       x2="146.05935"
+       y2="383.40579"
+       gradientTransform="matrix(1.62621,0,0,1.355175,-127.05989,-171.64115)"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset="0%"
+         style="stop-color:#ffffff;stop-opacity:1"
+         id="stop1" />
+      <!-- Hottest - white -->
+      <stop
+         offset="20%"
+         style="stop-color:#ff2800;stop-opacity:1"
+         id="stop2" />
+      <!-- Very hot - red -->
+      <stop
+         offset="40%"
+         style="stop-color:#ff9200;stop-opacity:1"
+         id="stop3" />
+      <!-- Hot - orange -->
+      <stop
+         offset="60%"
+         style="stop-color:#ffff00;stop-opacity:1"
+         id="stop4" />
+      <!-- Warm - yellow -->
+      <stop
+         offset="80%"
+         style="stop-color:#0048ff;stop-opacity:1"
+         id="stop5" />
+      <!-- Cool - blue -->
+      <stop
+         offset="100%"
+         style="stop-color:#000080;stop-opacity:1"
+         id="stop6" />
+      <!-- Coldest - navy -->
+    </linearGradient>
+  </defs>
+  <!-- Thermal scan area -->
+  <rect
+     x="110.46329"
+     y="110.41762"
+     width="285.0278"
+     height="237.52316"
+     fill="url(#thermalGradient)"
+     id="rect6"
+     style="fill:url(#thermalGradient);stroke-width:1.48452" />
+  <!-- Thermal scan lines -->
+  <line
+     x1="110.46329"
+     y1="140.108"
+     x2="395.49106"
+     y2="140.108"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line6" />
+  <line
+     x1="110.46329"
+     y1="169.79839"
+     x2="395.49106"
+     y2="169.79839"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line7" />
+  <line
+     x1="110.46329"
+     y1="199.4888"
+     x2="395.49106"
+     y2="199.4888"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line8" />
+  <line
+     x1="110.46329"
+     y1="229.17918"
+     x2="395.49106"
+     y2="229.17918"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line9" />
+  <line
+     x1="110.46329"
+     y1="258.8696"
+     x2="395.49106"
+     y2="258.8696"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line10" />
+  <line
+     x1="110.46329"
+     y1="288.56"
+     x2="395.49106"
+     y2="288.56"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line11" />
+  <line
+     x1="110.46329"
+     y1="318.25037"
+     x2="395.49106"
+     y2="318.25037"
+     stroke="#ffffff"
+     stroke-width="1.48452"
+     stroke-opacity="0.5"
+     id="line12" />
+  <!-- Monitoring points/sensors - data collection points -->
+  <circle
+     cx="140.15367"
+     cy="154.9532"
+     fill="#1f77b4"
+     id="circle12"
+     r="8.9071188"
+     style="stroke-width:1.48452" />
+  <circle
+     cx="229.22485"
+     cy="214.334"
+     fill="#1f77b4"
+     id="circle13"
+     r="8.9071188"
+     style="stroke-width:1.48452" />
+  <circle
+     cx="318.29602"
+     cy="288.56"
+     fill="#1f77b4"
+     id="circle14"
+     r="8.9071188"
+     style="stroke-width:1.48452" />
+  <!-- Connection lines between monitoring points - data relationships -->
+  <line
+     x1="140.15367"
+     y1="154.9532"
+     x2="229.22485"
+     y2="214.334"
+     stroke="#555555"
+     stroke-width="2.96904"
+     stroke-dasharray="5, 3"
+     id="line14" />
+  <line
+     x1="229.22485"
+     y1="214.334"
+     x2="318.29602"
+     y2="288.56"
+     stroke="#555555"
+     stroke-width="2.96904"
+     stroke-dasharray="5, 3"
+     id="line15" />
+  <!-- Data graph element - representing temperature time series -->
+  <polyline
+     points="120,420 150,390 180,410 210,380 240,400 270,370 300,405 330,375 360,395 390,365"
+     stroke="#d62728"
+     stroke-width="4"
+     fill="none"
+     id="polyline15"
+     transform="matrix(1.4845198,0,0,1.4845198,-127.05989,-171.64115)" />
+  <!-- Structural/geotechnical element - representing ground deformation or structural behavior -->
+  <path
+     d="m 36.237288,377.63117 h 44.5356 v -29.6904 c 29.690382,-14.8452 59.380782,14.8452 89.071182,0 29.6904,-14.8452 59.38079,14.8452 89.07118,0 29.6904,-14.8452 59.3808,14.8452 89.07119,0 29.6904,-14.8452 59.3808,14.8452 89.07119,0 v 29.6904 h 44.53559"
+     stroke="#2c3e50"
+     stroke-width="5.93807"
+     fill="none"
+     id="path15" />
+</svg>

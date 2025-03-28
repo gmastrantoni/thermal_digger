@@ -8,7 +8,7 @@ from typing import Optional
 class Config:
     # Application settings
     APP_NAME: str = "Thermal Image Analyzer"
-    VERSION: str = "1.2.0"
+    VERSION: str = "2.0.0 (beta)"
     
     # Development info
     DEVELOPER: str = "Giandomenico Mastrantoni"
@@ -18,8 +18,10 @@ class Config:
     
     # Paths
     RESOURCES_DIR: str = os.path.join(os.path.dirname(__file__), "..", "resources")
-    LOGO_PATH: str = os.path.join(RESOURCES_DIR, "logo.png")
-    
+    # LOGO_PATH: str = os.path.join(RESOURCES_DIR, "app_icon.png")
+    ICON_PATH: str = os.path.join(RESOURCES_DIR, "thermal_analyzer_icon.png")  # Main icon (PNG)
+    ICON_ICO_PATH: str = os.path.join(RESOURCES_DIR, "thermal_analyzer_icon.ico")  # Windows icon
+
     # File settings
     SUPPORTED_EXTENSIONS: tuple = (".csv",)
     METADATA_ROWS: int = 8
