@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="thermal_analyzer",
-    version="2.0.0 (beta)",
+    version="2.0.1 (beta)",
     author="Giandomenico Mastrantoni",
     author_email="giandomenico.mastrantoni@uniroma1.it",
     description="A tool for analyzing thermal image time series data",

@@ -19,7 +19,7 @@ except ImportError:
 class ThermalImageGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Thermal Image Analyzer")
+        self.root.title("Thermal Digger")
         # Set initial window size (width x height)
         self.root.geometry("1200x900")
         # Set minimum window size
@@ -327,7 +327,7 @@ class ThermalImageGUI:
                 # Load and resize logo
                 logo = Image.open(config.ICON_PATH)
                 # Resize logo to height of 30 pixels while maintaining aspect ratio
-                logo_height = 30
+                logo_height = 50
                 aspect_ratio = logo.width / logo.height
                 logo_width = int(logo_height * aspect_ratio)
                 logo = logo.resize((logo_width, logo_height), Image.Resampling.LANCZOS)

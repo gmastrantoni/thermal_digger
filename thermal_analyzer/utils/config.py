@@ -1,4 +1,4 @@
-"""Configuration settings for the Thermal Analyzer application."""
+"""Configuration settings for the Thermal Digger application."""
 
 import os
 from dataclasses import dataclass
@@ -7,27 +7,27 @@ from typing import Optional
 @dataclass
 class Config:
     # Application settings
-    APP_NAME: str = "Thermal Image Analyzer"
-    VERSION: str = "2.0.0 (beta)"
+    APP_NAME: str = "Thermal Digger"
+    VERSION: str = "2.0.1 (beta)"
     
     # Development info
     DEVELOPER: str = "Giandomenico Mastrantoni"
-    ORGANIZATION: str = "Sapienza University of Rome - CERI Research Centre"
+    ORGANIZATION: str = "" #"Sapienza University of Rome - CERI Research Centre"
     COPYRIGHT: str = "© 2025"
     WEBSITE: str = ""
     
     # Paths
     RESOURCES_DIR: str = os.path.join(os.path.dirname(__file__), "..", "resources")
     # LOGO_PATH: str = os.path.join(RESOURCES_DIR, "app_icon.png")
-    ICON_PATH: str = os.path.join(RESOURCES_DIR, "thermal_analyzer_icon.png")  # Main icon (PNG)
-    ICON_ICO_PATH: str = os.path.join(RESOURCES_DIR, "thermal_analyzer_icon.ico")  # Windows icon
+    ICON_PATH: str = os.path.join(RESOURCES_DIR, "thermal_digger_icon.png")  # Main icon (PNG)
+    ICON_ICO_PATH: str = os.path.join(RESOURCES_DIR, "thermal_digger_icon.ico")  # Windows icon
 
     # File settings
     SUPPORTED_EXTENSIONS: tuple = (".csv",)
     METADATA_ROWS: int = 8
     
     # Plot settings
-    COLORMAP: str = "Greys"
+    COLORMAP: str = "binary_r"
     FIGURE_DPI: int = 600
     
     # Export settings

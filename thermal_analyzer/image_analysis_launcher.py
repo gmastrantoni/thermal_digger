@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk
 import os
 import sys
+from image_analysis_gui import ChangeDetectionWindow
 
 def add_change_detection_launcher(app):
     """
@@ -42,9 +43,6 @@ def launch_change_detection_window(app):
     Parameters:
         app: ThermalImageGUI instance
     """
-    # Import here to avoid circular imports
-    from image_analysis_gui import ChangeDetectionWindow
-    
     # Create the change detection window
     change_window = ChangeDetectionWindow(app.root, app)
     
