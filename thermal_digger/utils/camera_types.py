@@ -2,6 +2,7 @@
 
 from enum import Enum, auto
 
+
 class CameraType(Enum):
     """Enumeration of supported thermal camera types."""
     MOBOTIX = auto()
