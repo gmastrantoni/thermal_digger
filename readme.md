@@ -1,6 +1,7 @@
-# Thermal Image Analyzer
+# Thermal Digger
 
-A Python application for analyzing thermal image time series data. This tool allows users to analyze temperature variations over time in thermal images, with support for both point and region-based analysis.
+A Python application for analyzing multi-temporal thermal image data. This tool allows users to analyze temperature variations over time in thermal images, with support for both point and region-based analysis.
+Version 2.0 adds an additional panel to image analysis with edge detection algorithms and master-slave image processing techniques.
 
 ## Features
 
@@ -17,8 +18,8 @@ A Python application for analyzing thermal image time series data. This tool all
 ### From source
 
 ```bash
-git clone https://github.com/gmastrantoni/thermal_analyzer.git
-cd thermal_analyzer
+git clone https://github.com/gmastrantoni/thermal_digger.git
+cd thermal_digger
 pip install -e .
 ```
 
@@ -32,7 +33,7 @@ pip install -e .
 ### Running the application
 
 ```bash
-python ./thermal_analyzer/main.py
+python ./thermal_digger/main.py
 ```
 
 
@@ -71,6 +72,7 @@ The application supports the following thermal camera formats:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+Please cite this repository when using the software.
 
 ## Authors
 
