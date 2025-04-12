@@ -8,7 +8,7 @@ from typing import Optional
 class Config:
     # Application settings
     APP_NAME: str = "Thermal Digger"
-    VERSION: str = "2.0.1 (beta)"
+    VERSION: str = "2.0.1"
     
     # Development info
     DEVELOPER: str = "Giandomenico Mastrantoni"

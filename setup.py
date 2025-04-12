@@ -7,8 +7,8 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
     requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
-    name="thermal_analyzer",
-    version="2.0.1 (beta)",
+    name="Thermal-Digger",
+    version="2.0.1",
     author="Giandomenico Mastrantoni",
     author_email="giandomenico.mastrantoni@uniroma1.it",
     description="A tool for analyzing thermal image time series data",
