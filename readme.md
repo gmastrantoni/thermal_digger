@@ -1,7 +1,7 @@
 # Thermal Digger
 
 A Python application for analyzing multi-temporal thermal image data. This tool allows users to analyze temperature variations over time in thermal images, with support for both point and region-based analysis.
-Version 2.0 adds an additional panel to image analysis with edge detection algorithms and master-slave image processing techniques.
+Version 2.0 adds a new panel for image analysis with implemented edge detection algorithms and master-slave image processing techniques.
 
 ## Features
 
